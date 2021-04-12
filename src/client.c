@@ -6,58 +6,77 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <unistd.h>
-#define TAM 256
 
-int main( int argc, char *argv[] ) {
+#define TAM 256
+#define PACKET_LENGTH 16
+
+int main(int argc, char *argv[]){
 	int sockfd, puerto;
-	ssize_t n;
+	// ssize_t n;
+	ssize_t bytes_readed;
 	struct sockaddr_in serv_addr;
 	struct hostent *server;
-	int terminar = 0;
+	// int terminar = 0;
+	char reading_buffer[PACKET_LENGTH];
+	char writing_buffer[PACKET_LENGTH] = "Acknowledge";
+	// char buffer[TAM];
 
-	char buffer[TAM];
-	if ( argc < 3 ) {
-		fprintf( stderr, "Uso %s host puerto\n", argv[0]);
-		exit( 0 );
+	if(argc < 3){
+		fprintf(stderr, "Uso %s host puerto\n", argv[0]);
+		exit(EXIT_FAILURE);
 	}
 
-	puerto = atoi( argv[2] );
-	sockfd = socket( AF_INET, SOCK_STREAM, 0 );
+	puerto = atoi(argv[2]);
+	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
-	server = gethostbyname( argv[1] );
+	server = gethostbyname(argv[1]);
 
-	memset( (char *) &serv_addr, '0', sizeof(serv_addr) );
+	memset((char*)&serv_addr, '0', sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;
-	bcopy( (char *)server->h_addr, (char *)&serv_addr.sin_addr.s_addr, (size_t)server->h_length );
-	serv_addr.sin_port = htons( (uint16_t)puerto );
-	if ( connect( sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr ) ) < 0 ) {
-		perror( "conexion" );
-		exit( 1 );
+	bcopy((char*)server->h_addr, (char*)&serv_addr.sin_addr.s_addr, (size_t)server->h_length);
+	serv_addr.sin_port = htons((uint16_t)puerto);
+
+	if(connect(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0){
+		perror("connect() failed.\n");
+		exit(EXIT_FAILURE);
 	}
 
-	while(1) {
-		printf( "Ingrese el mensaje a transmitir: " );
-		memset( buffer, '\0', TAM );
-		fgets( buffer, TAM-1, stdin );
+	while(1){
+		bytes_readed = read(sockfd, &reading_buffer, PACKET_LENGTH);
 
-		n = write( sockfd, buffer, strlen(buffer) );
-
-		// Verificando si se escribió: fin
-		buffer[strlen(buffer)-1] = '\0';
-		if( !strcmp( "fin", buffer ) ) {
-			terminar = 1;
+		if(bytes_readed == -1){
+			perror("read() failed.\n");
+			exit(EXIT_FAILURE);
 		}
 
-		memset( buffer, '\0', TAM );
-		n = read( sockfd, buffer, TAM );
-		if(n<0){
-			perror("Read Error.\n");
+		printf("Message received: %s.\n", reading_buffer);
+
+		if(write(sockfd, &writing_buffer, PACKET_LENGTH) == -1){
+			perror("write() failed.\n");
+			exit(EXIT_FAILURE);
 		}
-		printf( "Respuesta: %s\n", buffer );
-		if( terminar ) {
-			printf( "Finalizando ejecución\n" );
-			exit(0);
-		}
+		// printf("Ingrese el mensaje a transmitir: ");
+		// memset(buffer, '\0', TAM);
+		// fgets(buffer, TAM-1, stdin);
+
+		// n = write(sockfd, buffer, strlen(buffer));
+
+		// // Verificando si se escribió: fin
+		// buffer[strlen(buffer)-1] = '\0';
+		// if(!strcmp("fin", buffer)){
+		// 	terminar = 1;
+		// }
+
+		// memset(buffer, '\0', TAM);
+		// n = read(sockfd, buffer, TAM);
+		// if(n<0){
+		// 	perror("Read Error.\n");
+		// }
+		// printf("Respuesta: %s\n", buffer);
+		// if(terminar){
+		// 	printf("Finalizando ejecución\n");
+		// 	exit(0);
+		// }
 	}
 	return 0;
 } 
