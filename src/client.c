@@ -7,19 +7,15 @@
 #include <netdb.h>
 #include <unistd.h>
 
-#define TAM 256
-#define PACKET_LENGTH 16
+#define PACKET_LENGTH 64
 
 int main(int argc, char *argv[]){
 	int sockfd, puerto;
-	// ssize_t n;
 	ssize_t bytes_readed;
 	struct sockaddr_in serv_addr;
 	struct hostent *server;
-	// int terminar = 0;
 	char reading_buffer[PACKET_LENGTH];
 	char writing_buffer[PACKET_LENGTH] = "Acknowledge";
-	// char buffer[TAM];
 
 	if(argc < 3){
 		fprintf(stderr, "Uso %s host puerto\n", argv[0]);
@@ -55,28 +51,6 @@ int main(int argc, char *argv[]){
 			perror("write() failed.\n");
 			exit(EXIT_FAILURE);
 		}
-		// printf("Ingrese el mensaje a transmitir: ");
-		// memset(buffer, '\0', TAM);
-		// fgets(buffer, TAM-1, stdin);
-
-		// n = write(sockfd, buffer, strlen(buffer));
-
-		// // Verificando si se escribió: fin
-		// buffer[strlen(buffer)-1] = '\0';
-		// if(!strcmp("fin", buffer)){
-		// 	terminar = 1;
-		// }
-
-		// memset(buffer, '\0', TAM);
-		// n = read(sockfd, buffer, TAM);
-		// if(n<0){
-		// 	perror("Read Error.\n");
-		// }
-		// printf("Respuesta: %s\n", buffer);
-		// if(terminar){
-		// 	printf("Finalizando ejecución\n");
-		// 	exit(0);
-		// }
 	}
 	return 0;
 } 

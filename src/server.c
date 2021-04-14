@@ -6,20 +6,20 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <sys/epoll.h>
+#include <sched.h>
 
-#define TAM 256
 #define MAX_EVENT 10
-#define PACKET_LENGTH 16
+#define PACKET_LENGTH 64
+#define NUM_HOSTS 5000
+
+void command_line_interface();
 
 int main(int argc, char *argv[]){
 	int listen_sock, client_sock, puerto, epollfd, rdy_fds;
-	// int pid;
-	// char buffer[TAM];
 	char checksum_buffer[PACKET_LENGTH] = "Cheksum Message";
 	char reading_buffer[PACKET_LENGTH];
 	struct sockaddr_in serv_addr, cli_addr;
 	socklen_t clilen;
-	// ssize_t n;
 	ssize_t bytes_readed;
 	struct epoll_event event_config;
 	struct epoll_event event_list[MAX_EVENT];
@@ -45,11 +45,11 @@ int main(int argc, char *argv[]){
 
 	printf("Proceso: %d - socket disponible: %d\n", getpid(), ntohs(serv_addr.sin_port));
 
-	listen(listen_sock, 5);
+	listen(listen_sock, NUM_HOSTS);
 
 	clilen = sizeof(cli_addr);
 
-	epollfd = epoll_create(5000);
+	epollfd = epoll_create(NUM_HOSTS);
 
 	if(epollfd == -1){
 		perror("epoll_create() failed.\n");
@@ -94,56 +94,21 @@ int main(int argc, char *argv[]){
 					exit(EXIT_FAILURE);
 				}
 			}
-			else{
+			else if(event_list[i].events & EPOLLIN){
 				bytes_readed = read(event_list[i].data.fd, &reading_buffer, PACKET_LENGTH);
 				
 				if(bytes_readed == -1){
 					perror("read() failed.\n");
 					exit(EXIT_FAILURE);
 				}
-
-				printf("Received message: %s.\n", reading_buffer);
+				else if(bytes_readed != 0){
+					printf("Received message: '%s' from %d.\n", reading_buffer, event_list[i].data.fd);
+				}
+				else{
+					printf("Proceso: %d - socket desconectado: %d\n", getpid(), event_list[i].data.fd);
+				}
 			}
 		}
-
-		// newsockfd = accept(listen_sock, (struct sockaddr*)&cli_addr, &clilen);
-
-		// pid = fork(); 
-
-		// if(pid == 0){  // Proceso hijo
-		//     close(listen_sock);
-		    
-		//     while(1){
-		// 		memset(buffer, 0, TAM);
-				
-		// 		n = read(newsockfd, buffer, TAM-1);
-
-		// 		if(n < 0){
-		// 			perror("lectura de socket");
-		// 			exit(1);
-		// 		}
-				
-		// 		printf("PROCESO %d.", getpid());
-		// 		printf("Recibí: %s", buffer);
-				
-		// 		n = write(newsockfd, "Obtuve su mensaje", 18);
-
-		// 		if(n < 0){
-		// 			perror("escritura en socket");
-		// 			exit(1);
-		// 		}
-		// 		// Verificación de si hay que terminar
-		// 		buffer[strlen(buffer)-1] = '\0';
-		// 		if(!strcmp("fin", buffer)){
-		// 			printf("PROCESO %d. Como recibí 'fin', termino la ejecución.\n\n", getpid());
-		// 			exit(0);
-		// 		}
-		// 	}
-		// }
-		// else{
-		// 	printf("SERVIDOR: Nuevo cliente, que atiende el proceso hijo: %d\n", pid);
-		// 	close(newsockfd);
-		// }
 	}
 	return 0; 
 }
