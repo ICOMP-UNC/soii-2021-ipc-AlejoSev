@@ -7,6 +7,9 @@
 #include <unistd.h>
 #include <sys/epoll.h>
 #include <sched.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
 
 #define MAX_EVENT 10
 #define PACKET_LENGTH 64
