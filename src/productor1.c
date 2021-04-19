@@ -32,7 +32,7 @@ int main(){
 
     printf("Key: %d\n", msg_queue_key);
 
-    if(qid = msgget(msg_queue_key, 0666) == -1){
+    if((qid = msgget(msg_queue_key, 0666)) == -1){
         perror("msgget() failed.\n");
         exit(EXIT_FAILURE);
     }
@@ -43,6 +43,7 @@ int main(){
             exit(EXIT_FAILURE);
         }
         sleep(1);
+        printf("%s\n", msgp.mtext);
     }
 
     return 0;
