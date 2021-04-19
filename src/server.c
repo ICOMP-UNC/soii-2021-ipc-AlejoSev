@@ -35,6 +35,7 @@ int main(int argc, char *argv[]){
 	// ----------------------------------------------------------------------------------------------------------
 
 	struct Node* connected_clients = NULL;
+	struct Node* aux;
 
 	// ----------------------------------------------------------------------------------------------------------
 
@@ -139,7 +140,7 @@ int main(int argc, char *argv[]){
 						exit(EXIT_FAILURE);
 					}
 					else if(bytes_readed != 0){
-						printf("Received message: '%s' from %d.\n", reading_buffer, event_list[i].data.fd);
+						printf("Message received: '%s' from %d.\n", reading_buffer, event_list[i].data.fd);
 					}
 					else{
 						printf("Proceso: %d - socket desconectado: %d\n", getpid(), event_list[i].data.fd);
@@ -153,6 +154,17 @@ int main(int argc, char *argv[]){
 		}
 		else{
 			printf("Message received: %s type: %ld\n", msgp.mtext, msgp.mtype);
+
+			aux = connected_clients;
+
+			while(aux != NULL){
+				if(write(aux->fd, msgp.mtext, PACKET_LENGTH) == -1){
+					perror("write() failed.\n");
+					exit(EXIT_FAILURE);
+				}
+
+				aux = aux->next;
+			}
 		}
 	}
 	return 0; 
