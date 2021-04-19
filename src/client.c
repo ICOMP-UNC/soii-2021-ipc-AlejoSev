@@ -7,7 +7,7 @@
 #include <netdb.h>
 #include <unistd.h>
 
-#define PACKET_LENGTH 64
+#define PACKET_LENGTH 128
 
 int main(int argc, char *argv[]){
 	int sockfd, puerto;
@@ -18,11 +18,12 @@ int main(int argc, char *argv[]){
 	char writing_buffer[PACKET_LENGTH] = "Acknowledge";
 
 	if(argc < 3){
-		fprintf(stderr, "Uso %s host puerto\n", argv[0]);
+		fprintf(stderr, "Uso %s hostname port client_address\n", argv[0]);
 		exit(EXIT_FAILURE);
 	}
 
 	puerto = atoi(argv[2]);
+	// client_address = atoi(argv[3]);
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
 	server = gethostbyname(argv[1]);

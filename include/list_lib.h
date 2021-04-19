@@ -1,16 +1,15 @@
 #ifndef _LIST_LIB_H_
 #define _LIST_LIB_H_
-#define PACKET_LENGTH 64
+#define PACKET_LENGTH 128
 
-typedef struct node {
-    char val[PACKET_LENGTH];
-    struct node * next;
-} node_t;
+struct Node {
+    int fd;
+    int address;
+    struct Node* next;
+};
 
-void print_list(node_t*);
-void push_end(node_t*, char[]);
-void push_beginning(node_t**, char[]);
-char* pop(node_t**);
-char* remove_last(node_t*);
-char* remove_by_index(node_t**, int);
+void push_client(struct Node**, int, int);
+void delete_client(struct Node**, int);
+void print_clients(struct Node*);
+
 #endif

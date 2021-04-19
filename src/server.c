@@ -13,7 +13,7 @@
 #include "../include/list_lib.h"
 
 #define MAX_EVENT 10
-#define PACKET_LENGTH 64
+#define PACKET_LENGTH 128
 #define NUM_HOSTS 5000
 
 struct msgbuf{
@@ -25,6 +25,7 @@ int main(int argc, char *argv[]){
 	int listen_sock, client_sock, puerto, epollfd, rdy_fds;
 	char checksum_buffer[PACKET_LENGTH] = "Cheksum Message";
 	char reading_buffer[PACKET_LENGTH];
+	// char writing_buffer[PACKET_LENGTH];
 	struct sockaddr_in serv_addr, cli_addr;
 	socklen_t clilen;
 	ssize_t bytes_readed;
@@ -33,11 +34,7 @@ int main(int argc, char *argv[]){
 
 	// ----------------------------------------------------------------------------------------------------------
 
-	node_t * head = NULL;
-    head = (node_t *) malloc(sizeof(node_t));
-    if (head == NULL) {
-        return 1;
-    }
+	struct Node* connected_clients = NULL;
 
 	// ----------------------------------------------------------------------------------------------------------
 
@@ -126,6 +123,8 @@ int main(int argc, char *argv[]){
 					exit(EXIT_FAILURE);
 				}
 
+				push_client(&connected_clients, client_sock, 0);
+
 				if(write(client_sock, &checksum_buffer, PACKET_LENGTH) == -1){
 					perror("write() failed.\n");
 					exit(EXIT_FAILURE);
@@ -146,20 +145,13 @@ int main(int argc, char *argv[]){
 						printf("Proceso: %d - socket desconectado: %d\n", getpid(), event_list[i].data.fd);
 					}
 				}
-				// if(event_list[i].events & EPOLLOUT){
-				// 	if(write(event_list[i].data.fd, pop(&head), PACKET_LENGTH) == -1){
-				// 		perror("write() failed.\n");
-				// 		exit(EXIT_FAILURE);
-				// 	}
-				// }
 			}
 		}
 
 		if(msgrcv(qid, (void*)&msgp, sizeof(msgp.mtext), 0, IPC_NOWAIT) == -1){
-			
+
 		}
 		else{
-			push_beginning(&head, msgp.mtext);
 			printf("Message received: %s type: %ld\n", msgp.mtext, msgp.mtype);
 		}
 	}

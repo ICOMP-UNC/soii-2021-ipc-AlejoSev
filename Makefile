@@ -14,7 +14,7 @@ bin/productor2:
 bin/productor3:
 	$(CC) $(CFLAGS) src/productor3.c -o bin/productor3
 bin/sysv:
-	$(CC) $(CFLAGS) src/sysv.c obj/list_lib.o -o bin/sysv
+	$(CC) $(CFLAGS) src/sysv.c -o bin/sysv
 obj/list_lib.o:
 	$(CC) $(CFLAGS) -c src/list_lib.c -o obj/list_lib.o
 

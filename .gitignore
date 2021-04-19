@@ -54,3 +54,7 @@ dkms.conf
 #Binaries
 bin/
 ./bin
+
+#VS Code
+.vscode/
+./.vscode
