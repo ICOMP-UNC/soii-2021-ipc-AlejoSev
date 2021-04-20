@@ -107,11 +107,11 @@ int main(int argc, char *argv[]){
                 ready_to_send = 1;
             }
             else if(!strcmp(parsed_input[0], "delete")){
-                printf("calling delete function...\n");
+                printf("Deleting %s from %s\n", parsed_input[1], parsed_input[2]);
                 ready_to_send = 1;
             }
             else if(!strcmp(parsed_input[0], "log")){
-                printf("calling log function...\n");
+                printf("Sending log to %s\n", parsed_input[1]);
                 ready_to_send = 1;
             }
             else{
@@ -126,8 +126,10 @@ int main(int argc, char *argv[]){
         strcat(to_send, parsed_input[0]);
         strcat(to_send, " ");
         strcat(to_send, parsed_input[1]);
-        strcat(to_send, " ");
-        strcat(to_send, parsed_input[2]);
+        if(parsed_input[2] != NULL){
+            strcat(to_send, " ");
+            strcat(to_send, parsed_input[2]);         
+        }
 
         if(write(sockfd, &to_send, PACKET_LENGTH) == -1){
             perror("write() failed.\n");
