@@ -35,6 +35,9 @@ int main(int argc, char *argv[]){
 	// ----------------------------------------------------------------------------------------------------------
 
 	struct Node* connected_clients = NULL;
+	// struct Node* productor1_subs = NULL;
+	// struct Node* productor1_subs = NULL;
+	// struct Node* productor1_subs = NULL;
 	struct Node* aux;
 
 	// ----------------------------------------------------------------------------------------------------------
