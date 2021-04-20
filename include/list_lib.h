@@ -9,7 +9,8 @@ struct Node {
 };
 
 void push_client(struct Node**, int, int);
-void delete_client(struct Node**, int);
+void delete_client_by_address(struct Node**, int);
+void delete_client_by_fd(struct Node**, int);
 void print_clients(struct Node*);
 
 #endif

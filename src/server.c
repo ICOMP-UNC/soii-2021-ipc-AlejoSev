@@ -26,8 +26,9 @@ int main(int argc, char *argv[]){
 	char writing_buffer[PACKET_LENGTH] = {0};
 	char reading_buffer[PACKET_LENGTH];
 	char sserver_address[5];
-	int client_address;
+	int client_address, aux_address, aux_fd;
 	char* token;
+	char* cmd;
 	struct sockaddr_in serv_addr, cli_addr;
 	socklen_t clilen;
 	ssize_t bytes_readed;
@@ -37,9 +38,9 @@ int main(int argc, char *argv[]){
 	// ----------------------------------------------------------------------------------------------------------
 
 	struct Node* connected_clients = NULL;
-	// struct Node* productor1_subs = NULL;
-	// struct Node* productor2_subs = NULL;
-	// struct Node* productor3_subs = NULL;
+	struct Node* productor1_subs = NULL;
+	struct Node* productor2_subs = NULL;
+	struct Node* productor3_subs = NULL;
 	struct Node* aux;
 
 	// ----------------------------------------------------------------------------------------------------------
@@ -172,20 +173,54 @@ int main(int argc, char *argv[]){
 						}
 						else if(strcmp(token, "C") == 0){
 							token = strtok(NULL, " ");
+							cmd = token;
+							token = strtok(NULL, " ");
+							aux_address = atoi(token);
 
-							if(strcmp(token, "add") == 0){
-								printf("Add function\n");
+							aux = connected_clients;
+
+							while(aux != NULL){
+								if(aux->address == aux_address){
+									aux_fd = aux->fd;
+								}
+
+								aux = aux->next;
 							}
-							else if(strcmp(token, "delete") == 0){
+
+							if(strcmp(cmd, "add") == 0){
+								token = strtok(NULL, " ");
+
+								if(strcmp(token, "productor1") == 0){
+									push_client(&productor1_subs, aux_fd, aux_address);
+								}
+								else if(strcmp(token, "productor2") == 0){
+									push_client(&productor2_subs, aux_fd, aux_address);
+								}
+								else if(strcmp(token, "productor3") == 0){
+									push_client(&productor3_subs, aux_fd, aux_address);
+								}
+
+								printf("Prod1 Subs:\n");
+								print_clients(productor1_subs);
+
+								printf("Prod2 Subs:\n");
+								print_clients(productor2_subs);
+
+								printf("Prod3 Subs:\n");
+								print_clients(productor3_subs);
+							}
+							else if(strcmp(cmd, "delete") == 0){
 								printf("Delete function\n");
 							}
-							else if(strcmp(token, "log") == 0){
+							else if(strcmp(cmd, "log") == 0){
 								printf("Log function\n");
 							}
 						}						
 					}
 					else{
-						printf("Proceso: %d - socket desconectado: %d\n", getpid(), event_list[i].data.fd);
+						delete_client_by_fd(&connected_clients, event_list[i].data.fd);
+						printf("Process %d - Socket %d disconnected\n", getpid(), event_list[i].data.fd);
+						print_clients(connected_clients);
 					}
 				}
 			}

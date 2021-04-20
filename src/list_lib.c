@@ -16,7 +16,35 @@ void push_client(struct Node** head_ref, int new_fd, int new_address){
 /* Given a reference (pointer to pointer) to the head of a
    list and a key, deletes the first occurrence of key in
    linked list */
-void delete_client(struct Node** head_ref, int key){
+void delete_client_by_address(struct Node** head_ref, int key){
+    // Store head node
+    struct Node *temp = *head_ref, *prev;
+ 
+    // If head node itself holds the key to be deleted
+    if(temp != NULL && temp->address == key){
+        *head_ref = temp->next; // Changed head
+        free(temp); // free old head
+        return;
+    }
+ 
+    // Search for the key to be deleted, keep track of the
+    // previous node as we need to change 'prev->next'
+    while(temp != NULL && temp->address != key){
+        prev = temp;
+        temp = temp->next;
+    }
+ 
+    // If key was not present in linked list
+    if(temp == NULL)
+        return;
+ 
+    // Unlink the node from linked list
+    prev->next = temp->next;
+ 
+    free(temp); // Free memory
+}
+
+void delete_client_by_fd(struct Node** head_ref, int key){
     // Store head node
     struct Node *temp = *head_ref, *prev;
  
@@ -33,7 +61,7 @@ void delete_client(struct Node** head_ref, int key){
         prev = temp;
         temp = temp->next;
     }
- 
+
     // If key was not present in linked list
     if(temp == NULL)
         return;
