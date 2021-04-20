@@ -23,9 +23,10 @@ struct msgbuf{
 
 int main(int argc, char *argv[]){
 	int listen_sock, client_sock, puerto, epollfd, rdy_fds;
-	char checksum_buffer[PACKET_LENGTH] = "Cheksum Message";
+	// char checksum_buffer[PACKET_LENGTH] = "Cheksum Message";
+	char writing_buffer[PACKET_LENGTH] = {0};
 	char reading_buffer[PACKET_LENGTH];
-	// char writing_buffer[PACKET_LENGTH];
+	char sserver_address[5];
 	struct sockaddr_in serv_addr, cli_addr;
 	socklen_t clilen;
 	ssize_t bytes_readed;
@@ -53,8 +54,6 @@ int main(int argc, char *argv[]){
         exit(EXIT_FAILURE);
     }
 
-    printf("Key: %d\n", msg_queue_key);
-
     if((qid = msgget(msg_queue_key, 0666 | IPC_CREAT)) == -1){
         perror("msgget() failed.\n");
         exit(EXIT_FAILURE);
@@ -75,13 +74,15 @@ int main(int argc, char *argv[]){
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
 	serv_addr.sin_port = htons((uint16_t)puerto);
+	sprintf(sserver_address, "%d", serv_addr.sin_addr.s_addr);
 
 	if(bind(listen_sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0){
 		perror("bind() failed.\n");
 		exit(EXIT_FAILURE);
 	}
 
-	printf("Proceso: %d - socket disponible: %d\n", getpid(), ntohs(serv_addr.sin_port));
+	printf("---Server---\n");
+	printf("Process %d - Communication by port %d\n", getpid(), ntohs(serv_addr.sin_port));
 
 	listen(listen_sock, NUM_HOSTS);
 
@@ -129,10 +130,22 @@ int main(int argc, char *argv[]){
 
 				push_client(&connected_clients, client_sock, 0);
 
-				if(write(client_sock, &checksum_buffer, PACKET_LENGTH) == -1){
+				strcat(writing_buffer, "S");
+				strcat(writing_buffer, " ");
+				strcat(writing_buffer, sserver_address);
+				strcat(writing_buffer, " ");
+				strcat(writing_buffer, argv[1]);
+				strcat(writing_buffer, " ");
+				strcat(writing_buffer, "Checksum_Request");
+				strcat(writing_buffer, " ");
+				strcat(writing_buffer, "Checksum_Hash");
+
+				if(write(client_sock, &writing_buffer, PACKET_LENGTH) == -1){
 					perror("write() failed.\n");
 					exit(EXIT_FAILURE);
 				}
+				
+				bzero(writing_buffer, PACKET_LENGTH);
 			}
 			else{
 				if(event_list[i].events & EPOLLIN){
@@ -143,7 +156,7 @@ int main(int argc, char *argv[]){
 						exit(EXIT_FAILURE);
 					}
 					else if(bytes_readed != 0){
-						printf("Message received: '%s' from %d.\n", reading_buffer, event_list[i].data.fd);
+						printf("Message received: '%s' from %d\n", reading_buffer, event_list[i].data.fd);
 					}
 					else{
 						printf("Proceso: %d - socket desconectado: %d\n", getpid(), event_list[i].data.fd);
@@ -158,16 +171,28 @@ int main(int argc, char *argv[]){
 		else{
 			printf("Message received: %s type: %ld\n", msgp.mtext, msgp.mtype);
 
+			strcat(writing_buffer, "S");
+			strcat(writing_buffer, " ");
+			strcat(writing_buffer, sserver_address);
+			strcat(writing_buffer, " ");
+			strcat(writing_buffer, argv[1]);
+			strcat(writing_buffer, " ");
+			strcat(writing_buffer, msgp.mtext);
+			strcat(writing_buffer, " ");
+			strcat(writing_buffer, "Checksum_Hash");
+
 			aux = connected_clients;
 
 			while(aux != NULL){
-				if(write(aux->fd, msgp.mtext, PACKET_LENGTH) == -1){
+				if(write(aux->fd, writing_buffer, PACKET_LENGTH) == -1){
 					perror("write() failed.\n");
 					exit(EXIT_FAILURE);
 				}
 
 				aux = aux->next;
 			}
+
+			bzero(writing_buffer, PACKET_LENGTH);
 		}
 	}
 	return 0; 

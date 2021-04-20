@@ -15,7 +15,8 @@ int main(int argc, char *argv[]){
 	struct sockaddr_in serv_addr;
 	struct hostent *server;
 	char reading_buffer[PACKET_LENGTH];
-	char writing_buffer[PACKET_LENGTH] = "Acknowledge";
+	char writing_buffer[PACKET_LENGTH];
+	char* token;
 
 	if(argc < 3){
 		fprintf(stderr, "Uso %s hostname port client_address\n", argv[0]);
@@ -23,7 +24,6 @@ int main(int argc, char *argv[]){
 	}
 
 	puerto = atoi(argv[2]);
-	// client_address = atoi(argv[3]);
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
 	server = gethostbyname(argv[1]);
@@ -38,7 +38,14 @@ int main(int argc, char *argv[]){
 		exit(EXIT_FAILURE);
 	}
 
+	// char puertovich[2];
+	// sprintf(puertovich, "%d", serv_addr.sin_port);
+	// printf("Puertovich: %s\n", puertovich);
+
 	while(1){
+		bzero(reading_buffer, PACKET_LENGTH);
+		bzero(writing_buffer, PACKET_LENGTH);
+
 		bytes_readed = read(sockfd, &reading_buffer, PACKET_LENGTH);
 
 		if(bytes_readed == -1){
@@ -46,11 +53,44 @@ int main(int argc, char *argv[]){
 			exit(EXIT_FAILURE);
 		}
 
-		printf("Message received: %s.\n", reading_buffer);
+		printf("(%s)Message received: '%s'\n", argv[3], reading_buffer);
 
-		if(write(sockfd, &writing_buffer, PACKET_LENGTH) == -1){
-			perror("write() failed.\n");
-			exit(EXIT_FAILURE);
+		token = strtok(reading_buffer, " ");
+		token = strtok(NULL, " ");
+		token = strtok(NULL, " ");
+		token = strtok(NULL, " ");
+
+		if(strncmp(token,"Checksum_Request", 16) == 0){
+			strcat(writing_buffer, "H");
+			strcat(writing_buffer, " ");
+			strcat(writing_buffer, argv[3]);
+			strcat(writing_buffer, " ");
+			strcat(writing_buffer, argv[2]);
+			strcat(writing_buffer, " ");
+			strcat(writing_buffer, "Checksum_Acknowledge");
+			strcat(writing_buffer, " ");
+			strcat(writing_buffer, "Checksum_Hash");
+
+			if(write(sockfd, &writing_buffer, PACKET_LENGTH) == -1){
+				perror("write() failed.\n");
+				exit(EXIT_FAILURE);
+			}
+		}
+		else{
+			strcat(writing_buffer, "H");
+			strcat(writing_buffer, " ");
+			strcat(writing_buffer, argv[3]);
+			strcat(writing_buffer, " ");
+			strcat(writing_buffer, argv[2]);
+			strcat(writing_buffer, " ");
+			strcat(writing_buffer, "Message_Acknowledge");
+			strcat(writing_buffer, " ");
+			strcat(writing_buffer, "Checksum_Hash");
+
+			if(write(sockfd, &writing_buffer, PACKET_LENGTH) == -1){
+				perror("write() failed.\n");
+				exit(EXIT_FAILURE);
+			}
 		}
 	}
 

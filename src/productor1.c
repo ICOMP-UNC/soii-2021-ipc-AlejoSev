@@ -21,7 +21,7 @@ int main(){
     int qid;
 
     msgp.mtype = 2;
-    strcpy(msgp.mtext, "productor1 up");
+    strcpy(msgp.mtext, "productor1_up");
 
     msg_queue_key = ftok("/home/alejo/soii-2021-ipc-AlejoSev/src/server.c", 1);
 
