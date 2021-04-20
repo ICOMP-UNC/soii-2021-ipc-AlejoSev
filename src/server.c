@@ -23,10 +23,11 @@ struct msgbuf{
 
 int main(int argc, char *argv[]){
 	int listen_sock, client_sock, puerto, epollfd, rdy_fds;
-	// char checksum_buffer[PACKET_LENGTH] = "Cheksum Message";
 	char writing_buffer[PACKET_LENGTH] = {0};
 	char reading_buffer[PACKET_LENGTH];
 	char sserver_address[5];
+	int client_address;
+	char* token;
 	struct sockaddr_in serv_addr, cli_addr;
 	socklen_t clilen;
 	ssize_t bytes_readed;
@@ -37,8 +38,8 @@ int main(int argc, char *argv[]){
 
 	struct Node* connected_clients = NULL;
 	// struct Node* productor1_subs = NULL;
-	// struct Node* productor1_subs = NULL;
-	// struct Node* productor1_subs = NULL;
+	// struct Node* productor2_subs = NULL;
+	// struct Node* productor3_subs = NULL;
 	struct Node* aux;
 
 	// ----------------------------------------------------------------------------------------------------------
@@ -128,8 +129,6 @@ int main(int argc, char *argv[]){
 					exit(EXIT_FAILURE);
 				}
 
-				push_client(&connected_clients, client_sock, 0);
-
 				strcat(writing_buffer, "S");
 				strcat(writing_buffer, " ");
 				strcat(writing_buffer, sserver_address);
@@ -157,6 +156,33 @@ int main(int argc, char *argv[]){
 					}
 					else if(bytes_readed != 0){
 						printf("Message received: '%s' from %d\n", reading_buffer, event_list[i].data.fd);
+
+						token = strtok(reading_buffer, " ");
+
+						if(strcmp(token, "H") == 0){
+							token = strtok(NULL, " ");
+							client_address = atoi(token);
+							token = strtok(NULL, " ");
+							token = strtok(NULL, " ");
+
+							if(strcmp(token, "Checksum_Acknowledge") == 0){
+								push_client(&connected_clients, event_list[i].data.fd, client_address);
+								print_clients(connected_clients);
+							}
+						}
+						else if(strcmp(token, "C") == 0){
+							token = strtok(NULL, " ");
+
+							if(strcmp(token, "add") == 0){
+								printf("Add function\n");
+							}
+							else if(strcmp(token, "delete") == 0){
+								printf("Delete function\n");
+							}
+							else if(strcmp(token, "log") == 0){
+								printf("Log function\n");
+							}
+						}						
 					}
 					else{
 						printf("Proceso: %d - socket desconectado: %d\n", getpid(), event_list[i].data.fd);
