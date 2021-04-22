@@ -8,7 +8,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#define PACKET_LENGTH 128
+#define PACKET_LENGTH 64
 
 struct msgbuf{
     long mtype;
@@ -18,10 +18,10 @@ struct msgbuf{
 int main(){
     key_t msg_queue_key;
     struct msgbuf msgp;
-    char buffer[64];
     int qid;
     FILE* fp;
-    char* token = "";
+    char buffer[100];
+    char* token;
 
     msgp.mtype = 3;
     strcpy(msgp.mtext, "productor2_up");
@@ -41,34 +41,28 @@ int main(){
     }
 
     while(1){
-        fp = fopen("../proc/meminfo", O_RDONLY);
+        fp = fopen("/proc/meminfo", "r");
 
-        // while(read(fd, buffer, sizeof(buffer))){
-        //     if(strncmp(buffer, "MemFree", 7) == 0){
-        //         token = strtok(buffer,":");
-        //         token = strtok(NULL,":");
-        //         token = strtok(token," ");
-
-        //         printf("token: %s\n", token);
-        //     }
-        // }
-
-        fgets(buffer, sizeof(buffer), fp);
-
-        printf("%s\n", buffer);
-
-        if(strncmp(buffer, "MemFree", 6) == 0){
-            printf("Match\n");
+        if(fp == NULL){
+            printf("fopen() failed.\n");
+            exit(EXIT_FAILURE);
         }
 
-        printf("Available: %s\n", token);
+        while(fgets(buffer,100,fp)){
+            if(strncmp(buffer, "MemFree", 7) == 0){
+                token = strtok(buffer,":");
+                token = strtok(NULL,":");
+                token = strtok(token," ");
+                sprintf(msgp.mtext, "%s", token);
+            }
+        }
 
         if(msgsnd(qid, (void*)&msgp, sizeof(msgp.mtext), IPC_NOWAIT) == -1){
             perror("msgsnd() failed.");
             exit(EXIT_FAILURE);
         }
+        printf("%s\n", msgp.mtext);
 
-        token = "";
         sleep(1);
         fclose(fp);
     }

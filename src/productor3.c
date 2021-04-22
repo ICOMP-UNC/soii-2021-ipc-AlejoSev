@@ -9,7 +9,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#define PACKET_LENGTH 128
+#define PACKET_LENGTH 64
 
 struct msgbuf{
     long mtype;
@@ -33,6 +33,8 @@ int main(){
         exit(EXIT_FAILURE);
     }
 
+    printf("Key: %d\n", msg_queue_key);
+
     if((qid = msgget(msg_queue_key, 0666)) == -1){
         perror("msgget() failed.\n");
         exit(EXIT_FAILURE);
@@ -55,12 +57,12 @@ int main(){
         sprintf(to_send, "%f", n_cpu_load);
         strcpy(msgp.mtext, to_send);
 
-        printf("%s\n", msgp.mtext);
-
         if(msgsnd(qid, (void*)&msgp, sizeof(msgp.mtext), IPC_NOWAIT) == -1){
             perror("msgsnd() failed.");
             exit(EXIT_FAILURE);
         }
+
+        printf("%s\n", msgp.mtext);
 
         sleep(1);
         close(fd);

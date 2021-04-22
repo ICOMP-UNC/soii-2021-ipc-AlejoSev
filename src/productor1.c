@@ -8,7 +8,7 @@
 #include <sys/ipc.h>
 #include <sys/msg.h>
 
-#define PACKET_LENGTH 128
+#define PACKET_LENGTH 64
 
 struct msgbuf{
     long mtype;

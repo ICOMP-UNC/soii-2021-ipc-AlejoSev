@@ -284,12 +284,12 @@ int main(int argc, char *argv[]){
 				aux = productor2_subs;
 
 				while(aux != NULL){
-				if(write(aux->fd, writing_buffer, PACKET_LENGTH) == -1){
-					perror("write() failed.\n");
-					exit(EXIT_FAILURE);
-				}
+					if(write(aux->fd, writing_buffer, PACKET_LENGTH) == -1){
+						perror("write() failed.\n");
+						exit(EXIT_FAILURE);
+					}
 
-				aux = aux->next;
+					aux = aux->next;
 				}
 			}
 			else if(msgp.mtype == 4){
