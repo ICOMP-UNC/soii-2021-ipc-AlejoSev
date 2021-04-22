@@ -10,6 +10,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <openssl/md5.h>
+#include <time.h>
 #include "../include/list_lib.h"
 #include "../include/md5.h"
 
@@ -17,24 +18,16 @@
 
 
 int main(){
-    unsigned char digest[MD5_DIGEST_LENGTH];
-    char buf[(MD5_DIGEST_LENGTH * 2) + 1];
-    char str[16] = "Hello bro";
+    time_t current_time;
+	struct tm *time_struct;
 
-    char x[128] = "";
 
-    compute_md5("hello world", digest);
-    
-    for (int i = 0, j = 0; i < MD5_DIGEST_LENGTH; i++, j+=2)
-        sprintf(buf+j, "%02x", digest[i]);
-
-    buf[MD5_DIGEST_LENGTH * 2] = 0;
-    printf ("%s\n", buf);
-
-    strcat(x, str);
-    strcat(x, buf);
-
-    printf("%s\n", x);
+    while(1){
+        sleep(1);
+        current_time = time(NULL);
+        time_struct = localtime(&current_time);
+        printf("%02d:%02d:%02d\n", time_struct->tm_hour, time_struct->tm_min, time_struct->tm_sec);
+    }
 
     return 0;
 }

@@ -21,7 +21,6 @@ int main(){
     int qid;
 
     msgp.mtype = 2;
-    strcpy(msgp.mtext, "productor1_up");
 
     msg_queue_key = ftok("/home/alejo/soii-2021-ipc-AlejoSev/src/server.c", 1);
 
@@ -38,6 +37,8 @@ int main(){
     }
 
     while(1){
+        sprintf(msgp.mtext, "%d", rand());
+
         if(msgsnd(qid, (void*)&msgp, sizeof(msgp.mtext), IPC_NOWAIT) == -1){
             perror("msgsnd() failed.");
             exit(EXIT_FAILURE);

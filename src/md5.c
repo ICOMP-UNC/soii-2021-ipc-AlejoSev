@@ -9,4 +9,3 @@ void compute_md5(char *str, unsigned char digest[MD5_DIGEST_LENGTH]){
     MD5_Update(&ctx, str, strlen(str));
     MD5_Final(digest, &ctx);
 }
-

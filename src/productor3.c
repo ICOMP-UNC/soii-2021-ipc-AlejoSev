@@ -64,7 +64,7 @@ int main(){
 
         printf("%s\n", msgp.mtext);
 
-        sleep(1);
+        sleep(2);
         close(fd);
     }
 
