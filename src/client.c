@@ -6,6 +6,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <unistd.h>
+#include "../include/md5.h"
 
 #define PACKET_LENGTH 128
 
@@ -17,6 +18,9 @@ int main(int argc, char *argv[]){
 	char reading_buffer[PACKET_LENGTH];
 	char writing_buffer[PACKET_LENGTH];
 	char* token;
+
+	unsigned char digest[MD5_DIGEST_LENGTH];
+	char hash[(MD5_DIGEST_LENGTH * 2) + 1];
 
 	if(argc < 3){
 		fprintf(stderr, "Uso %s hostname port client_address\n", argv[0]);
@@ -38,10 +42,6 @@ int main(int argc, char *argv[]){
 		exit(EXIT_FAILURE);
 	}
 
-	// char puertovich[2];
-	// sprintf(puertovich, "%d", serv_addr.sin_port);
-	// printf("Puertovich: %s\n", puertovich);
-
 	while(1){
 		bzero(reading_buffer, PACKET_LENGTH);
 		bzero(writing_buffer, PACKET_LENGTH);
@@ -61,35 +61,57 @@ int main(int argc, char *argv[]){
 		token = strtok(NULL, " ");
 
 		if(strncmp(token,"Checksum_Request", 16) == 0){
-			strcat(writing_buffer, "H");
-			strcat(writing_buffer, " ");
-			strcat(writing_buffer, argv[3]);
-			strcat(writing_buffer, " ");
-			strcat(writing_buffer, argv[2]);
-			strcat(writing_buffer, " ");
-			strcat(writing_buffer, "Checksum_Acknowledge");
-			strcat(writing_buffer, " ");
-			strcat(writing_buffer, "Checksum_Hash");
+			compute_md5(token, digest);
 
-			if(write(sockfd, &writing_buffer, PACKET_LENGTH) == -1){
-				perror("write() failed.\n");
-				exit(EXIT_FAILURE);
+			for (int i = 0, j = 0; i < MD5_DIGEST_LENGTH; i++, j+=2)
+				sprintf(hash+j, "%02x", digest[i]);
+
+			hash[MD5_DIGEST_LENGTH * 2] = 0;
+			token = strtok(NULL, " ");
+
+			if(strncmp(token, hash, MD5_DIGEST_LENGTH*2) == 0){
+				compute_md5("Checksum_Acknowledge", digest);
+
+				for (int i = 0, j = 0; i < MD5_DIGEST_LENGTH; i++, j+=2)
+					sprintf(hash+j, "%02x", digest[i]);
+
+				hash[MD5_DIGEST_LENGTH * 2] = 0;
+
+				sprintf(writing_buffer, "H %s %s Checksum_Acknowledge %s", argv[3], argv[2], hash);
+
+				if(write(sockfd, &writing_buffer, PACKET_LENGTH) == -1){
+					perror("write() failed.\n");
+					exit(EXIT_FAILURE);
+				}
+
+				bzero(writing_buffer, PACKET_LENGTH);
 			}
 		}
 		else{
-			strcat(writing_buffer, "H");
-			strcat(writing_buffer, " ");
-			strcat(writing_buffer, argv[3]);
-			strcat(writing_buffer, " ");
-			strcat(writing_buffer, argv[2]);
-			strcat(writing_buffer, " ");
-			strcat(writing_buffer, "Message_Acknowledge");
-			strcat(writing_buffer, " ");
-			strcat(writing_buffer, "Checksum_Hash");
+			compute_md5(token, digest);
 
-			if(write(sockfd, &writing_buffer, PACKET_LENGTH) == -1){
-				perror("write() failed.\n");
-				exit(EXIT_FAILURE);
+			for (int i = 0, j = 0; i < MD5_DIGEST_LENGTH; i++, j+=2)
+				sprintf(hash+j, "%02x", digest[i]);
+
+			hash[MD5_DIGEST_LENGTH * 2] = 0;
+			token = strtok(NULL, " ");
+
+			if(strncmp(token, hash, MD5_DIGEST_LENGTH*2) == 0){
+				compute_md5("Message_Acknowledge", digest);
+
+				for (int i = 0, j = 0; i < MD5_DIGEST_LENGTH; i++, j+=2)
+					sprintf(hash+j, "%02x", digest[i]);
+
+				hash[MD5_DIGEST_LENGTH * 2] = 0;
+				bzero(writing_buffer, PACKET_LENGTH);
+				sprintf(writing_buffer, "H %s %s Message_Acknowledge %s", argv[3], argv[2], hash);
+
+				if(write(sockfd, &writing_buffer, PACKET_LENGTH) == -1){
+					perror("write() failed.\n");
+					exit(EXIT_FAILURE);
+				}
+
+				bzero(writing_buffer, PACKET_LENGTH);
 			}
 		}
 	}

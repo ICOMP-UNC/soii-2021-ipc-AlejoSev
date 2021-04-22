@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <sys/sysinfo.h>
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/stat.h>
@@ -9,44 +11,30 @@
 #include <fcntl.h>
 #include <openssl/md5.h>
 #include "../include/list_lib.h"
+#include "../include/md5.h"
 
 #define PACKET_LENGTH 128
 
+
 int main(){
-    // char buffer[PACKET_LENGTH];
-    char id[2] = "ho";
-    char test[] = "hola";
-    // char source_address[5];
-    // char port[3];
-    // char checksum[49];
-    // char test[5] = "";
+    unsigned char digest[MD5_DIGEST_LENGTH];
+    char buf[(MD5_DIGEST_LENGTH * 2) + 1];
+    char str[16] = "Hello bro";
 
-    // strcpy(buffer, "ABBBBCCHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH------------------------------------------------------------------------");
+    char x[128] = "";
 
-    // printf("%s\n", buffer);
-
-    // strncpy(id, buffer, 1);
-    // strncpy(source_address, buffer+1, 4);
-    // strncpy(port, buffer+5, 2);
-    // strncpy(checksum, buffer+7, 48);
-
-    // printf("id: %s\n", id);
-    // printf("source_address: %s\n", source_address);
-    // printf("port: %s\n", port);
-    // printf("checksum: %s\n", checksum);
-
-    // strncpy(buffer+55, test, 5);
-    // printf("%s\n", buffer);
-
-    // test[0] = 0x40;
-    // printf("%s\n", test);
-    // strncpy(test+1, port, 2);
-    // printf("%s\n", test);
-
-    // -------------------------------------------------------------------------------
+    compute_md5("hello world", digest);
     
-    printf("id:%s\ntest:%s\n", id, test);
-    printf("id:%2s\ntest:%2s\n", id, test);
+    for (int i = 0, j = 0; i < MD5_DIGEST_LENGTH; i++, j+=2)
+        sprintf(buf+j, "%02x", digest[i]);
+
+    buf[MD5_DIGEST_LENGTH * 2] = 0;
+    printf ("%s\n", buf);
+
+    strcat(x, str);
+    strcat(x, buf);
+
+    printf("%s\n", x);
 
     return 0;
 }

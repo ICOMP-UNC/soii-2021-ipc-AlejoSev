@@ -12,7 +12,7 @@
 
 struct msgbuf{
     long mtype;
-    char mtext[PACKET_LENGTH];
+    char mtext[64];
 };
 
 int main(){

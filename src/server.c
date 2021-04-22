@@ -11,6 +11,7 @@
 #include <sys/ipc.h>
 #include <sys/msg.h>
 #include "../include/list_lib.h"
+#include "../include/md5.h"
 
 #define MAX_EVENT 10
 #define PACKET_LENGTH 128
@@ -18,12 +19,12 @@
 
 struct msgbuf{
     long mtype;
-    char mtext[PACKET_LENGTH];
+    char mtext[64];
 };
 
 int main(int argc, char *argv[]){
 	int listen_sock, client_sock, puerto, epollfd, rdy_fds;
-	char writing_buffer[PACKET_LENGTH] = {0};
+	char writing_buffer[PACKET_LENGTH] = "";
 	char reading_buffer[PACKET_LENGTH];
 	char sserver_address[5];
 	int client_address, aux_address, aux_fd;
@@ -34,6 +35,11 @@ int main(int argc, char *argv[]){
 	ssize_t bytes_readed;
 	struct epoll_event event_config;
 	struct epoll_event event_list[MAX_EVENT];
+
+	// ----------------------------------------------------------------------------------------------------------
+
+	unsigned char digest[MD5_DIGEST_LENGTH];
+	char hash[(MD5_DIGEST_LENGTH * 2) + 1];
 
 	// ----------------------------------------------------------------------------------------------------------
 
@@ -130,15 +136,13 @@ int main(int argc, char *argv[]){
 					exit(EXIT_FAILURE);
 				}
 
-				strcat(writing_buffer, "S");
-				strcat(writing_buffer, " ");
-				strcat(writing_buffer, sserver_address);
-				strcat(writing_buffer, " ");
-				strcat(writing_buffer, argv[1]);
-				strcat(writing_buffer, " ");
-				strcat(writing_buffer, "Checksum_Request");
-				strcat(writing_buffer, " ");
-				strcat(writing_buffer, "Checksum_Hash");
+				compute_md5("Checksum_Request", digest);
+				for (int i = 0, j = 0; i < MD5_DIGEST_LENGTH; i++, j+=2)
+					sprintf(hash+j, "%02x", digest[i]);
+
+    			hash[MD5_DIGEST_LENGTH * 2] = 0;
+				bzero(writing_buffer, PACKET_LENGTH);
+				sprintf(writing_buffer, "S %s %s Checksum_Request %s", sserver_address, argv[1], hash);
 
 				if(write(client_sock, &writing_buffer, PACKET_LENGTH) == -1){
 					perror("write() failed.\n");
@@ -210,11 +214,33 @@ int main(int argc, char *argv[]){
 								print_clients(productor3_subs);
 							}
 							else if(strcmp(cmd, "delete") == 0){
-								printf("Delete function\n");
+								token = strtok(NULL, " ");
+
+								if(strcmp(token, "productor1") == 0){
+									delete_client_by_address(&productor1_subs, aux_address);
+								}
+								else if(strcmp(token, "productor2") == 0){
+									delete_client_by_address(&productor2_subs, aux_address);
+								}
+								else if(strcmp(token, "productor3") == 0){
+									delete_client_by_address(&productor3_subs, aux_address);
+								}
+
+								printf("Prod1 Subs:\n");
+								print_clients(productor1_subs);
+
+								printf("Prod2 Subs:\n");
+								print_clients(productor2_subs);
+
+								printf("Prod3 Subs:\n");
+								print_clients(productor3_subs);
 							}
 							else if(strcmp(cmd, "log") == 0){
 								printf("Log function\n");
 							}
+						}
+						else{
+							printf("\nProblems bro\n");
 						}						
 					}
 					else{
@@ -231,26 +257,52 @@ int main(int argc, char *argv[]){
 		}
 		else{
 			printf("Message received: %s type: %ld\n", msgp.mtext, msgp.mtype);
+			bzero(writing_buffer, PACKET_LENGTH);
 
-			strcat(writing_buffer, "S");
-			strcat(writing_buffer, " ");
-			strcat(writing_buffer, sserver_address);
-			strcat(writing_buffer, " ");
-			strcat(writing_buffer, argv[1]);
-			strcat(writing_buffer, " ");
-			strcat(writing_buffer, msgp.mtext);
-			strcat(writing_buffer, " ");
-			strcat(writing_buffer, "Checksum_Hash");
+			compute_md5(msgp.mtext, digest);
 
-			aux = connected_clients;
+			for (int i = 0, j = 0; i < MD5_DIGEST_LENGTH; i++, j+=2)
+				sprintf(hash+j, "%02x", digest[i]);
 
-			while(aux != NULL){
+			hash[MD5_DIGEST_LENGTH * 2] = 0;
+
+			sprintf(writing_buffer, "S %s %s %s %s", sserver_address, argv[1], msgp.mtext, hash);
+
+			if(msgp.mtype == 2){
+				aux = productor1_subs;
+
+				while(aux != NULL){
+					if(write(aux->fd, writing_buffer, PACKET_LENGTH) == -1){
+						perror("write() failed.\n");
+						exit(EXIT_FAILURE);
+					}
+
+					aux = aux->next;
+				}
+			}
+			else if(msgp.mtype == 3){
+				aux = productor2_subs;
+
+				while(aux != NULL){
 				if(write(aux->fd, writing_buffer, PACKET_LENGTH) == -1){
 					perror("write() failed.\n");
 					exit(EXIT_FAILURE);
 				}
 
 				aux = aux->next;
+				}
+			}
+			else if(msgp.mtype == 4){
+				aux = productor3_subs;
+
+				while(aux != NULL){
+					if(write(aux->fd, writing_buffer, PACKET_LENGTH) == -1){
+						perror("write() failed.\n");
+						exit(EXIT_FAILURE);
+					}
+
+					aux = aux->next;
+				}
 			}
 
 			bzero(writing_buffer, PACKET_LENGTH);
