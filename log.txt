@@ -1,0 +1,23 @@
+[20:57:50] '--- Server Up ---
+[20:57:53] Client 0 Connected
+[20:57:53] Client 1 Connected
+[20:57:53] Client 2 Connected
+[20:57:53] Client 3 Connected
+[20:57:53] Client 4 Connected
+[20:57:54] Client 5 Connected
+[20:57:54] Client 6 Connected
+[20:57:54] Client 7 Connected
+[20:57:54] Client 8 Connected
+[20:57:54] Client 9 Connected
+[20:57:58] Client 0 Disconnected
+[20:57:58] Client 2 Disconnected
+[20:57:58] Client 1 Disconnected
+[20:57:58] Client 4 Disconnected
+[20:57:58] Client 6 Disconnected
+[20:57:58] Client 3 Disconnected
+[20:57:58] Client 9 Disconnected
+[20:57:58] Client 8 Disconnected
+[20:57:58] Client 7 Disconnected
+[20:57:58] Client 5 Disconnected
+[20:58:12] Client 21966 Disconnected
+[20:58:14] '--- Server Down ---

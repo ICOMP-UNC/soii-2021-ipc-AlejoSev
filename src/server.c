@@ -12,6 +12,7 @@
 #include <sys/msg.h>
 #include <time.h>
 #include <signal.h>
+#include <zip.h>
 #include "../include/list_lib.h"
 #include "../include/md5.h"
 
@@ -25,6 +26,7 @@ struct msgbuf{
 };
 
 int get_address_by_fd(struct Node* n, int fd);
+void create_log_zip();
 void close_server();
 
 FILE* fp;
@@ -256,7 +258,7 @@ int main(int argc, char *argv[]){
 								}
 							}
 							else if(strcmp(cmd, "log") == 0){
-								printf("Log function\n");
+								create_log_zip();
 							}
 						}
 						else{
@@ -267,7 +269,6 @@ int main(int argc, char *argv[]){
 						aux_address = get_address_by_fd(connected_clients, event_list[i].data.fd);
 
 						delete_client_by_fd(&connected_clients, event_list[i].data.fd);
-						printf("Process %d - Socket %d disconnected\n", getpid(), event_list[i].data.fd);
 						t = time(NULL);
 						c_time = localtime(&t);
 						fprintf(fp, "[%02d:%02d:%02d] Client %d Disconnected\n", c_time->tm_hour, c_time->tm_min, c_time->tm_sec, aux_address);
@@ -363,6 +364,43 @@ int get_address_by_fd(struct Node* n, int fd){
 	}
 
 	return address;
+}
+
+void create_log_zip(){
+	fclose(fp);
+	printf("Cerre el log\n");
+
+	fp = fopen("log.txt", "r");
+	char* buffer = NULL;
+	long int size = 0;
+	
+	rewind(fp);
+	fseek(fp, 0, SEEK_END);
+	size = ftell(fp);
+
+	rewind(fp);
+	buffer = malloc(((long unsigned int)size + 1) * sizeof(buffer));
+	fread(buffer, (long unsigned int)size, 1, fp);
+
+	buffer[size] = '\0';
+	printf("%s", buffer);
+
+	int err = 0;
+	zip_t* z = zip_open("log.zip", ZIP_CREATE, &err);
+	if(z == NULL){
+		perror("Error al clear el archivo zip\n");
+		exit(EXIT_FAILURE);
+	}
+	zip_source_t* zs;
+	zs = zip_source_buffer(z, buffer, strlen(buffer), 0);
+	zip_file_add(z, "log.txt", zs, ZIP_FL_OVERWRITE | ZIP_FL_ENC_UTF_8);
+
+	zip_close(z); 
+
+	fclose(fp);
+
+	fp = fopen("log.txt", "a");
+	free(buffer);
 }
 
 void close_server(){

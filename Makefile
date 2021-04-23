@@ -2,7 +2,7 @@ CC=gcc
 CFLAGS= -g -Wall -pedantic -Werror -Wextra -Wconversion -std=gnu11
 
 bin/server: clean obj/md5.o obj/list_lib.o bin/client bin/cli bin/productor1 bin/productor2 bin/productor3 bin/sysv
-	$(CC) $(CFLAGS) src/server.c obj/md5.o obj/list_lib.o -o bin/server -lcrypto -lssl
+	$(CC) $(CFLAGS) src/server.c obj/md5.o obj/list_lib.o -o bin/server -lcrypto -lssl -lzip
 bin/client:
 	$(CC) $(CFLAGS) src/client.c obj/md5.o -o bin/client -lcrypto -lssl
 bin/cli:
