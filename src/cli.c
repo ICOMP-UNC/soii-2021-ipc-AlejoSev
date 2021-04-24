@@ -10,6 +10,8 @@
 
 #define PACKET_LENGTH 128
 
+int check_productor(char* s);
+
 int main(int argc, char *argv[]){
     char user_input[64];
     char to_send[PACKET_LENGTH];
@@ -105,6 +107,7 @@ int main(int argc, char *argv[]){
             word_counter = 0;
 
             token = strtok(user_input, " ");
+
             while(token != NULL){
                 parsed_input = (char**)reallocarray(parsed_input, (size_t)word_counter+1, sizeof(char*));
                 parsed_input[word_counter] = (char*)calloc(strlen(token), sizeof(char*));
@@ -114,20 +117,26 @@ int main(int argc, char *argv[]){
                 token = strtok(NULL, " ");
             }
 
-            if(!strcmp(parsed_input[0], "add")){
-                printf("Adding %s to %s\n", parsed_input[1], parsed_input[2]);
-                ready_to_send = 1;
-            }
-            else if(!strcmp(parsed_input[0], "delete")){
-                printf("Deleting %s from %s\n", parsed_input[1], parsed_input[2]);
-                ready_to_send = 1;
-            }
-            else if(!strcmp(parsed_input[0], "log")){
-                printf("Sending log to %s\n", parsed_input[1]);
-                ready_to_send = 1;
+            if((atoi(parsed_input[1]) >= 0)  && (check_productor(parsed_input[2]))){
+                if(!strcmp(parsed_input[0], "add")){
+                    printf("Adding %s to %s\n", parsed_input[1], parsed_input[2]);
+                    ready_to_send = 1;
+                }
+                else if(!strcmp(parsed_input[0], "delete")){
+                    printf("Deleting %s from %s\n", parsed_input[1], parsed_input[2]);
+                    ready_to_send = 1;
+                }
+                else if(!strcmp(parsed_input[0], "log")){
+                    printf("Sending log to %s\n", parsed_input[1]);
+                    ready_to_send = 1;
+                }
+                else{
+                    printf("Command not found. Try again.\nCommand List:\n    add <client> <productor>\n    add <client> <productor>\n    log <client>\n");
+                }
             }
             else{
-                printf("Command not found. Try again.\nCommand List:\n    add <client> <productor>\n    add <client> <productor>\n    log <client>\n");
+                printf("Client address must be greater than 0.\n");
+                printf("Productors availables: productor1, productor2, productor3\n");
             }
         }
 
@@ -151,4 +160,19 @@ int main(int argc, char *argv[]){
         ready_to_send = 0;
 	}
 	return 0;
-} 
+}
+
+int check_productor(char* s){
+    if(strcmp(s, "productor1") == 0){
+        return 1;
+    }
+    else if(strcmp(s, "productor2") == 0){
+        return 1;
+    }
+    else if(strcmp(s, "productor3") == 0){
+        return 1;
+    }
+    else{
+        return 0;
+    }
+}

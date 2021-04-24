@@ -26,6 +26,7 @@ struct msgbuf{
 };
 
 int get_address_by_fd(struct Node* n, int fd);
+int check_match(struct Node* n, int address);
 void create_log_zip();
 void close_server();
 
@@ -190,7 +191,8 @@ int main(int argc, char *argv[]){
 							token = strtok(NULL, " ");
 							token = strtok(NULL, " ");
 
-							if(strcmp(token, "Checksum_Acknowledge") == 0){
+							if((strcmp(token, "Checksum_Acknowledge") == 0) && (check_match(connected_clients, client_address) == 0)){
+
 								push_client(&connected_clients, event_list[i].data.fd, client_address);
 								t = time(NULL);
 								c_time = localtime(&t); 
@@ -216,19 +218,19 @@ int main(int argc, char *argv[]){
 							if(strcmp(cmd, "add") == 0){
 								token = strtok(NULL, " ");
 
-								if(strcmp(token, "productor1") == 0){
+								if((strcmp(token, "productor1") == 0) && !check_match(productor1_subs, aux_address) && check_match(connected_clients, aux_address)){
 									push_client(&productor1_subs, aux_fd, aux_address);
 									t = time(NULL);
 									c_time = localtime(&t); 
 									fprintf(fp, "[%02d:%02d:%02d] Client %d Subscribed to Productor1\n", c_time->tm_hour, c_time->tm_min, c_time->tm_sec, aux_address);
 								}
-								else if(strcmp(token, "productor2") == 0){
+								else if((strcmp(token, "productor2") == 0) && !check_match(productor2_subs, aux_address) && check_match(connected_clients, aux_address)){
 									push_client(&productor2_subs, aux_fd, aux_address);
 									t = time(NULL);
 									c_time = localtime(&t);
 									fprintf(fp, "[%02d:%02d:%02d] Client %d Subscribed to Productor2\n", c_time->tm_hour, c_time->tm_min, c_time->tm_sec, aux_address);
 								}
-								else if(strcmp(token, "productor3") == 0){
+								else if((strcmp(token, "productor3") == 0) && !check_match(productor3_subs, aux_address) && check_match(connected_clients, aux_address)){
 									push_client(&productor3_subs, aux_fd, aux_address);
 									t = time(NULL);
 									c_time = localtime(&t);
@@ -238,19 +240,19 @@ int main(int argc, char *argv[]){
 							else if(strcmp(cmd, "delete") == 0){
 								token = strtok(NULL, " ");
 
-								if(strcmp(token, "productor1") == 0){
+								if((strcmp(token, "productor1") == 0) && (check_match(productor1_subs, aux_address) == 1)){
 									delete_client_by_address(&productor1_subs, aux_address);
 									t = time(NULL);
 									c_time = localtime(&t);
 									fprintf(fp, "[%02d:%02d:%02d] Client %d Unsubscribed from Productor1\n", c_time->tm_hour, c_time->tm_min, c_time->tm_sec, aux_address);
 								}
-								else if(strcmp(token, "productor2") == 0){
+								else if((strcmp(token, "productor2") == 0) && (check_match(productor2_subs, aux_address) == 1)){
 									delete_client_by_address(&productor2_subs, aux_address);
 									t = time(NULL);
 									c_time = localtime(&t);
 									fprintf(fp, "[%02d:%02d:%02d] Client %d Unsubscribed from Productor2\n", c_time->tm_hour, c_time->tm_min, c_time->tm_sec, aux_address);
 								}
-								else if(strcmp(token, "productor3") == 0){
+								else if((strcmp(token, "productor3") == 0) && (check_match(productor3_subs, aux_address) == 1)){
 									delete_client_by_address(&productor3_subs, aux_address);
 									t = time(NULL);
 									c_time = localtime(&t);
@@ -364,6 +366,20 @@ int get_address_by_fd(struct Node* n, int fd){
 	}
 
 	return address;
+}
+
+int check_match(struct Node* n, int address){
+	struct Node* aux = n;
+
+	while(aux != NULL){
+		if(aux->address == address){
+			return 1;
+		}
+
+		aux = aux->next;
+	}
+
+	return 0;
 }
 
 void create_log_zip(){
