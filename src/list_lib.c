@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include "../include/list_lib.h"
 
 /* Given a reference (pointer to pointer) to the head of a
@@ -85,11 +86,39 @@ void print_clients(struct Node* node){
 
 void add_msg(struct Node** head_ref, int address, char s[]){
     struct Node* node = *head_ref;
+
     while(node != NULL){
         if(node->address == address){
             strcpy(node->p_messages[node->msg_i], s);
             printf("p_message: %s\n", node->p_messages[node->msg_i]);
             node->msg_i++;
+        }
+
+        node = node->next;
+    }
+}
+
+int get_address_by_fd(struct Node* n, int fd){
+	struct Node* aux = n;
+	int address;
+
+	while(aux != NULL){
+		if(aux->fd == fd){
+			address = aux->address;
+		}
+
+		aux = aux->next;
+	}
+
+	return address;
+}
+
+void set_d_time(struct Node** head_ref, int address){
+    struct Node* node = *head_ref;
+
+    while(node != NULL){
+        if(node->address == address){
+            node->d_time = time(NULL);
         }
 
         node = node->next;

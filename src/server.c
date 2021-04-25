@@ -36,38 +36,22 @@ time_t t;
 struct tm *c_time;
 
 int main(int argc, char *argv[]){
-	int listen_sock, client_sock, puerto, epollfd, rdy_fds;
-	char writing_buffer[PACKET_LENGTH] = "";
-	char reading_buffer[PACKET_LENGTH];
-	char sserver_address[5];
-	int client_address, aux_address, aux_fd;
-	char* token;
-	char* cmd;
+	int listen_sock, client_sock, puerto, epollfd, rdy_fds, client_address, aux_address, aux_fd, qid;
+	char hash[(MD5_DIGEST_LENGTH * 2) + 1], sserver_address[5], reading_buffer[PACKET_LENGTH], writing_buffer[PACKET_LENGTH] = "";
+	char* token, *cmd;
 	struct sockaddr_in serv_addr, cli_addr;
 	socklen_t clilen;
 	ssize_t bytes_readed;
-	struct epoll_event event_config;
-	struct epoll_event event_list[MAX_EVENT];
-
-	// ----------------------------------------------------------------------------------------------------------
-
+	struct epoll_event event_config, event_list[MAX_EVENT];
 	unsigned char digest[MD5_DIGEST_LENGTH];
-	char hash[(MD5_DIGEST_LENGTH * 2) + 1];
-
-	// ----------------------------------------------------------------------------------------------------------
-
 	struct Node* connected_clients = NULL;
 	struct Node* disconnected_clients = NULL;
 	struct Node* productor1_subs = NULL;
 	struct Node* productor2_subs = NULL;
 	struct Node* productor3_subs = NULL;
 	struct Node* aux;
-
-	// ----------------------------------------------------------------------------------------------------------
-
 	key_t msg_queue_key;
     struct msgbuf msgp;
-    int qid;
 
     msg_queue_key = ftok("/home/alejo/soii-2021-ipc-AlejoSev/src/server.c", 1);
 
@@ -80,8 +64,6 @@ int main(int argc, char *argv[]){
         perror("msgget() failed.\n");
         exit(EXIT_FAILURE);
     }
-
-	//-----------------------------------------------------------------------------------------------------------
 
 	if(argc < 2){
 		fprintf(stderr, "Uso: %s <puerto>\n", argv[0]);
@@ -194,17 +176,63 @@ int main(int argc, char *argv[]){
 
 							if((strcmp(token, "Checksum_Acknowledge") == 0) && (check_match(connected_clients, client_address) == 0)){
 								if(check_match(disconnected_clients, client_address)){
-									// función de reenvio de mensajes
-									delete_client_by_address(&disconnected_clients, client_address);
-									printf("Cliente encontrado en lista de desconectados\n");
+									aux = disconnected_clients;
+
+									while(aux != NULL){
+										if(aux->address == client_address){
+											delete_client_by_address(&disconnected_clients, client_address);
+											
+											if(time(NULL)-aux->d_time < 5){
+												for(int j = 0; j<aux->msg_i; j++){
+													compute_md5(aux->p_messages[i], digest);
+
+													for (int i = 0, j = 0; i < MD5_DIGEST_LENGTH; i++, j+=2)
+														sprintf(hash+j, "%02x", digest[i]);
+
+													hash[MD5_DIGEST_LENGTH * 2] = 0;
+													sprintf(writing_buffer, "S %s %s %s %s", sserver_address, argv[1], aux->p_messages[j], hash);
+
+													if(write(event_list[i].data.fd, writing_buffer, PACKET_LENGTH) == -1){
+														perror("write() failed.\n");
+														exit(EXIT_FAILURE);
+													}
+												}
+
+												if(check_match(productor1_subs, client_address)){
+													delete_client_by_address(&productor1_subs, client_address);
+													push_client(&productor1_subs, event_list[i].data.fd, client_address);
+												}
+												if(check_match(productor2_subs, client_address)){
+													delete_client_by_address(&productor2_subs, client_address);
+													push_client(&productor2_subs, event_list[i].data.fd, client_address);
+												}
+												if(check_match(productor3_subs, client_address)){
+													delete_client_by_address(&productor3_subs, client_address);
+													push_client(&productor3_subs, event_list[i].data.fd, client_address);
+												}
+											}
+											else{
+												if(check_match(productor1_subs, client_address)){
+													delete_client_by_address(&productor1_subs, client_address);
+												}
+												if(check_match(productor2_subs, client_address)){
+													delete_client_by_address(&productor2_subs, client_address);
+												}
+												if(check_match(productor3_subs, client_address)){
+													delete_client_by_address(&productor3_subs, client_address);
+												}
+
+												close(aux->fd);
+											}
+										}
+
+										aux = aux->next;
+									}
 								}
 
 								push_client(&connected_clients, event_list[i].data.fd, client_address);
 								update_time();
 								fprintf(fp, "[%02d:%02d:%02d] Client %d Connected\n", c_time->tm_hour, c_time->tm_min, c_time->tm_sec, client_address);
-								printf("Desconectados:\n");
-								print_clients(disconnected_clients);
-								printf("------------------\n");
 							}
 						}
 						else if(strcmp(token, "C") == 0){
@@ -212,14 +240,12 @@ int main(int argc, char *argv[]){
 							cmd = token;
 							token = strtok(NULL, " ");
 							aux_address = atoi(token);
-
 							aux = connected_clients;
 
 							while(aux != NULL){
 								if(aux->address == aux_address){
 									aux_fd = aux->fd;
 								}
-
 								aux = aux->next;
 							}
 
@@ -272,12 +298,10 @@ int main(int argc, char *argv[]){
 					else{
 						aux_address = get_address_by_fd(connected_clients, event_list[i].data.fd);
 						push_client(&disconnected_clients, -1, aux_address);
+						set_d_time(&disconnected_clients, aux_address);
 						delete_client_by_fd(&connected_clients, event_list[i].data.fd);
 						update_time();
 						fprintf(fp, "[%02d:%02d:%02d] Client %d Disconnected\n", c_time->tm_hour, c_time->tm_min, c_time->tm_sec, aux_address);
-						printf("Desconectados:\n");
-						print_clients(disconnected_clients);
-						printf("------------------\n");
 					}
 				}
 			}
@@ -327,13 +351,18 @@ int main(int argc, char *argv[]){
 				while(aux != NULL){
 					aux_address = get_address_by_fd(productor2_subs, aux->fd);
 
-					if(write(aux->fd, writing_buffer, PACKET_LENGTH) == -1){
-						perror("write() failed.\n");
-						exit(EXIT_FAILURE);
+					if(!check_match(disconnected_clients, aux_address)){
+						if(write(aux->fd, writing_buffer, PACKET_LENGTH) == -1){
+							perror("write() failed.\n");
+							exit(EXIT_FAILURE);
+						}
+						
+						update_time();
+						fprintf(fp, "[%02d:%02d:%02d] '%s' Sent from Productor2 to Client %d\n", c_time->tm_hour, c_time->tm_min, c_time->tm_sec, msgp.mtext, aux_address);
 					}
-					
-					update_time();
-					fprintf(fp, "[%02d:%02d:%02d] '%s' Sent from Productor2 to Client %d\n", c_time->tm_hour, c_time->tm_min, c_time->tm_sec, msgp.mtext, aux_address);
+					else{
+						add_msg(&disconnected_clients, aux_address, msgp.mtext);
+					}
 
 					aux = aux->next;
 				}
@@ -344,13 +373,18 @@ int main(int argc, char *argv[]){
 				while(aux != NULL){
 					aux_address = get_address_by_fd(productor3_subs, aux->fd);
 
-					if(write(aux->fd, writing_buffer, PACKET_LENGTH) == -1){
-						perror("write() failed.\n");
-						exit(EXIT_FAILURE);
+					if(!check_match(disconnected_clients, aux_address)){
+						if(write(aux->fd, writing_buffer, PACKET_LENGTH) == -1){
+							perror("write() failed.\n");
+							exit(EXIT_FAILURE);
+						}
+						
+						update_time();
+						fprintf(fp, "[%02d:%02d:%02d] '%s' Sent from Productor3 to Client %d\n", c_time->tm_hour, c_time->tm_min, c_time->tm_sec, msgp.mtext, aux_address);
 					}
-					
-					update_time();
-					fprintf(fp, "[%02d:%02d:%02d] '%s' Sent from Productor3 to Client %d\n", c_time->tm_hour, c_time->tm_min, c_time->tm_sec, msgp.mtext, aux_address);
+					else{
+						add_msg(&disconnected_clients, aux_address, msgp.mtext);
+					}
 
 					aux = aux->next;
 				}
@@ -360,21 +394,6 @@ int main(int argc, char *argv[]){
 		}
 	}
 	return 0; 
-}
-
-int get_address_by_fd(struct Node* n, int fd){
-	struct Node* aux = n;
-	int address;
-
-	while(aux != NULL){
-		if(aux->fd == fd){
-			address = aux->address;
-		}
-
-		aux = aux->next;
-	}
-
-	return address;
 }
 
 int check_match(struct Node* n, int address){
