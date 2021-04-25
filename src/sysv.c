@@ -18,15 +18,14 @@
 
 
 int main(){
-    time_t current_time;
-	struct tm *time_struct;
+    char buff[128][64] = {""};
 
+    for(int i = 0; i < 64; i++){
+        printf("%s\n", buff[i]);
+    }
 
-    while(1){
-        sleep(1);
-        current_time = time(NULL);
-        time_struct = localtime(&current_time);
-        printf("%02d:%02d:%02d\n", time_struct->tm_hour, time_struct->tm_min, time_struct->tm_sec);
+    if(strcmp(buff[0], "\0") == 0){
+        printf("Ue");
     }
 
     return 0;

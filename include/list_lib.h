@@ -5,6 +5,8 @@
 struct Node {
     int fd;
     int address;
+    int msg_i;
+    char p_messages[128][64];
     struct Node* next;
 };
 
@@ -12,5 +14,6 @@ void push_client(struct Node**, int, int);
 void delete_client_by_address(struct Node**, int);
 void delete_client_by_fd(struct Node**, int);
 void print_clients(struct Node*);
+void add_msg(struct Node**, int, char []);
 
 #endif

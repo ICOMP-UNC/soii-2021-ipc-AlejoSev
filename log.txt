@@ -1,3 +1,13 @@
-[12:52:10] '--- Server Up ---
-[12:52:45] Client 32765 Disconnected
-[12:52:46] '--- Server Down ---
+[22:41:47] --- Server Up ---
+[22:41:56] --- Server Down ---
+[22:41:58] --- Server Up ---
+[22:42:02] Client 10 Connected
+[22:42:09] Client 10 Subscribed to Productor1
+[22:42:15] Client 10 Disconnected
+[22:42:49] Client 10 Disconnected
+[22:43:12] --- Server Down ---
+[22:43:14] --- Server Up ---
+[22:43:16] Client 10 Connected
+[22:43:20] Client 10 Disconnected
+[22:43:22] Client 21918 Disconnected
+[22:43:34] --- Server Down ---

@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "../include/list_lib.h"
 
 /* Given a reference (pointer to pointer) to the head of a
@@ -9,6 +10,7 @@ void push_client(struct Node** head_ref, int new_fd, int new_address){
     struct Node* new_node = (struct Node*)malloc(sizeof(struct Node));
     new_node->fd = new_fd;
     new_node->address = new_address;
+    new_node->msg_i = 0;
     new_node->next = (*head_ref);
     (*head_ref) = new_node;
 }
@@ -74,10 +76,22 @@ void delete_client_by_fd(struct Node** head_ref, int key){
  
 // This function prints contents of linked list starting
 // from the given node
-void print_clients(struct Node* node)
-{
-    while (node != NULL) {
+void print_clients(struct Node* node){
+    while(node != NULL){
         printf("File Descriptor: %d - Address: %d\n", node->fd, node->address);
+        node = node->next;
+    }
+}
+
+void add_msg(struct Node** head_ref, int address, char s[]){
+    struct Node* node = *head_ref;
+    while(node != NULL){
+        if(node->address == address){
+            strcpy(node->p_messages[node->msg_i], s);
+            printf("p_message: %s\n", node->p_messages[node->msg_i]);
+            node->msg_i++;
+        }
+
         node = node->next;
     }
 }
