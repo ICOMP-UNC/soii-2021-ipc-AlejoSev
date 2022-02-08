@@ -4,9 +4,6 @@
 #include <time.h>
 #include "../include/list_lib.h"
 
-/* Given a reference (pointer to pointer) to the head of a
-   list and an int, inserts a new node on the front of the
-   list. */
 void push_client(struct Node** head_ref, int new_fd, int new_address){
     struct Node* new_node = (struct Node*)malloc(sizeof(struct Node));
     new_node->fd = new_fd;
@@ -16,9 +13,6 @@ void push_client(struct Node** head_ref, int new_fd, int new_address){
     (*head_ref) = new_node;
 }
  
-/* Given a reference (pointer to pointer) to the head of a
-   list and a key, deletes the first occurrence of key in
-   linked list */
 void delete_client_by_address(struct Node** head_ref, int key){
     // Store head node
     struct Node *temp = *head_ref, *prev;
@@ -75,8 +69,6 @@ void delete_client_by_fd(struct Node** head_ref, int key){
     free(temp); // Free memory
 }
  
-// This function prints contents of linked list starting
-// from the given node
 void print_clients(struct Node* node){
     while(node != NULL){
         printf("File Descriptor: %d - Address: %d\n", node->fd, node->address);

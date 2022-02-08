@@ -53,14 +53,14 @@ int main(int argc, char *argv[]){
 	key_t msg_queue_key;
     struct msgbuf msgp;
 
-    msg_queue_key = ftok("/home/alejo/soii-2021-ipc-AlejoSev/src/server.c", 1);
+    msg_queue_key = ftok("/home/alejo/soii-2021-ipc-AlejoSev/src/server.c", 1);			//Generamos clave
 
     if(msg_queue_key == -1){
         perror("ftok() failed.\n");
         exit(EXIT_FAILURE);
     }
 
-    if((qid = msgget(msg_queue_key, 0666 | IPC_CREAT)) == -1){
+    if((qid = msgget(msg_queue_key, 0666 | IPC_CREAT)) == -1){							//Obtenemos queue
         perror("msgget() failed.\n");
         exit(EXIT_FAILURE);
     }
@@ -72,7 +72,7 @@ int main(int argc, char *argv[]){
 
 	signal(SIGINT, close_server);
 
-	listen_sock = socket(AF_INET, SOCK_STREAM, 0);
+	listen_sock = socket(AF_INET, SOCK_STREAM, 0);										//Creamos socket
 
 	memset((char*)&serv_addr, 0, sizeof(serv_addr));
 
@@ -87,11 +87,11 @@ int main(int argc, char *argv[]){
 		exit(EXIT_FAILURE);
 	}
 
-	listen(listen_sock, NUM_HOSTS);
+	listen(listen_sock, NUM_HOSTS);														//Lo ponemos a escuchar
 
 	clilen = sizeof(cli_addr);
 
-	epollfd = epoll_create(NUM_HOSTS);
+	epollfd = epoll_create(NUM_HOSTS);													//Creamos epoll
 
 	if(epollfd == -1){
 		perror("epoll_create() failed.\n");
@@ -101,7 +101,7 @@ int main(int argc, char *argv[]){
 	event_config.events = EPOLLIN;
 	event_config.data.fd = listen_sock;
 
-	if(epoll_ctl(epollfd, EPOLL_CTL_ADD, listen_sock, &event_config) == -1){
+	if(epoll_ctl(epollfd, EPOLL_CTL_ADD, listen_sock, &event_config) == -1){			//Agregamos listen_sock al epoll
 		perror("epol_ctl() on listen_sock failed.\n");
 		exit(EXIT_FAILURE);
 	}
@@ -118,7 +118,7 @@ int main(int argc, char *argv[]){
 	fprintf(fp, "[%02d:%02d:%02d] --- Server Up ---\n", c_time->tm_hour, c_time->tm_min, c_time->tm_sec);
 
 	while(1){
-		rdy_fds = epoll_wait(epollfd, event_list, MAX_EVENT, 500);
+		rdy_fds = epoll_wait(epollfd, event_list, MAX_EVENT, 500);						//Esperamos eventos
 
 		if(rdy_fds == -1){
 			perror("epoll_wait() failed.\n");
@@ -127,7 +127,7 @@ int main(int argc, char *argv[]){
 
 		for(int i = 0; i<rdy_fds; i++){
 			if(event_list[i].data.fd == listen_sock){
-				client_sock = accept(listen_sock, (struct sockaddr*)&cli_addr, &clilen);
+				client_sock = accept(listen_sock, (struct sockaddr*)&cli_addr, &clilen);	//Aceptamos nuevo cliente
 
 				if(client_sock == -1){
 					perror("accept() failed.\n");
@@ -137,7 +137,7 @@ int main(int argc, char *argv[]){
 				event_config.events = EPOLLIN | EPOLLOUT | EPOLLET;
 				event_config.data.fd = client_sock;
 
-				if(epoll_ctl(epollfd, EPOLL_CTL_ADD, client_sock, &event_config) == -1){
+				if(epoll_ctl(epollfd, EPOLL_CTL_ADD, client_sock, &event_config) == -1){	//Lo agregamos al epoll
 					perror("epoll_ctl() on client_sock failed.\n");
 					exit(EXIT_FAILURE);
 				}
@@ -147,10 +147,11 @@ int main(int argc, char *argv[]){
 					sprintf(hash+j, "%02x", digest[i]);
 
     			hash[MD5_DIGEST_LENGTH * 2] = 0;
+
 				bzero(writing_buffer, PACKET_LENGTH);
 				sprintf(writing_buffer, "S %s %s Checksum_Request %s", sserver_address, argv[1], hash);
 
-				if(write(client_sock, &writing_buffer, PACKET_LENGTH) == -1){
+				if(write(client_sock, &writing_buffer, PACKET_LENGTH) == -1){				//Enviamos el primer mensaje al cliente
 					perror("write() failed.\n");
 					exit(EXIT_FAILURE);
 				}
@@ -159,7 +160,7 @@ int main(int argc, char *argv[]){
 			}
 			else{
 				if(event_list[i].events & EPOLLIN){
-					bytes_readed = read(event_list[i].data.fd, &reading_buffer, PACKET_LENGTH);
+					bytes_readed = read(event_list[i].data.fd, &reading_buffer, PACKET_LENGTH);		//Leemos mensaje entrante
 					
 					if(bytes_readed == -1){
 						perror("read() failed.\n");
@@ -168,22 +169,22 @@ int main(int argc, char *argv[]){
 					else if(bytes_readed != 0){
 						token = strtok(reading_buffer, " ");
 
-						if(strcmp(token, "H") == 0){
+						if(strcmp(token, "H") == 0){				//En caso de ser cliente
 							token = strtok(NULL, " ");
 							client_address = atoi(token);
 							token = strtok(NULL, " ");
 							token = strtok(NULL, " ");
 
-							if((strcmp(token, "Checksum_Acknowledge") == 0) && (check_match(connected_clients, client_address) == 0)){
-								if(check_match(disconnected_clients, client_address)){
+							if((strcmp(token, "Checksum_Acknowledge") == 0) && (check_match(connected_clients, client_address) == 0)){	//En caso de no estar en la lista de conectados y que sea checksum_ack
+								if(check_match(disconnected_clients, client_address)){													//Si estaba en la lista de desconectados
 									aux = disconnected_clients;
 
 									while(aux != NULL){
 										if(aux->address == client_address){
 											delete_client_by_address(&disconnected_clients, client_address);
 											
-											if(time(NULL)-aux->d_time < 5){
-												for(int j = 0; j<aux->msg_i; j++){
+											if(time(NULL)-aux->d_time < 5){										//Si el tiempo de desconexion es menor a 5 segs
+												for(int j = 0; j<aux->msg_i; j++){								//Le mando todos los mensajes guardados para el
 													compute_md5(aux->p_messages[i], digest);
 
 													for (int i = 0, j = 0; i < MD5_DIGEST_LENGTH; i++, j+=2)
@@ -198,7 +199,7 @@ int main(int argc, char *argv[]){
 													}
 												}
 
-												if(check_match(productor1_subs, client_address)){
+												if(check_match(productor1_subs, client_address)){							//Renuevo file descriptor en todas las listas
 													delete_client_by_address(&productor1_subs, client_address);
 													push_client(&productor1_subs, event_list[i].data.fd, client_address);
 												}
@@ -211,7 +212,7 @@ int main(int argc, char *argv[]){
 													push_client(&productor3_subs, event_list[i].data.fd, client_address);
 												}
 											}
-											else{
+											else{																			//Si fueron mas de 5 segs lo saco de las listas
 												if(check_match(productor1_subs, client_address)){
 													delete_client_by_address(&productor1_subs, client_address);
 												}
@@ -230,12 +231,12 @@ int main(int argc, char *argv[]){
 									}
 								}
 
-								push_client(&connected_clients, event_list[i].data.fd, client_address);
+								push_client(&connected_clients, event_list[i].data.fd, client_address);					//Lo agrego a la lista de conectados
 								update_time();
 								fprintf(fp, "[%02d:%02d:%02d] Client %d Connected\n", c_time->tm_hour, c_time->tm_min, c_time->tm_sec, client_address);
 							}
 						}
-						else if(strcmp(token, "C") == 0){
+						else if(strcmp(token, "C") == 0){				// En caso de ser la CLI
 							token = strtok(NULL, " ");
 							cmd = token;
 							token = strtok(NULL, " ");
@@ -295,7 +296,7 @@ int main(int argc, char *argv[]){
 							printf("\nProblems bro\n");
 						}						
 					}
-					else{
+					else{																					//En caso de que se desconecte un cliente
 						aux_address = get_address_by_fd(connected_clients, event_list[i].data.fd);
 						push_client(&disconnected_clients, -1, aux_address);
 						set_d_time(&disconnected_clients, aux_address);
@@ -307,7 +308,7 @@ int main(int argc, char *argv[]){
 			}
 		}
 
-		if(msgrcv(qid, (void*)&msgp, sizeof(msgp.mtext), 0, IPC_NOWAIT) == -1){
+		if(msgrcv(qid, (void*)&msgp, sizeof(msgp.mtext), 0, IPC_NOWAIT) == -1){		//Leo mensaje de la Queue
 
 		}
 		else{
@@ -323,13 +324,13 @@ int main(int argc, char *argv[]){
 
 			sprintf(writing_buffer, "S %s %s %s %s", sserver_address, argv[1], msgp.mtext, hash);
 
-			if(msgp.mtype == 2){
+			if(msgp.mtype == 2){													//Si es de productor1
 				aux = productor1_subs;
 
 				while(aux != NULL){
 					aux_address = get_address_by_fd(productor1_subs, aux->fd);
 
-					if(!check_match(disconnected_clients, aux_address)){
+					if(!check_match(disconnected_clients, aux_address)){			//Si esta conectado el cliente
 						if(write(aux->fd, writing_buffer, PACKET_LENGTH) == -1){
 							perror("write() failed.\n");
 							exit(EXIT_FAILURE);
@@ -338,20 +339,20 @@ int main(int argc, char *argv[]){
 						update_time();
 						fprintf(fp, "[%02d:%02d:%02d] '%s' Sent from Productor1 to Client %d\n", c_time->tm_hour, c_time->tm_min, c_time->tm_sec, msgp.mtext, aux_address);
 					}
-					else{
+					else{															//Si no esta conectado el cliente
 						add_msg(&disconnected_clients, aux_address, msgp.mtext);
 					}
 
 					aux = aux->next;
 				}
 			}
-			else if(msgp.mtype == 3){
+			else if(msgp.mtype == 3){												//Si es de productor2
 				aux = productor2_subs;
 
 				while(aux != NULL){
 					aux_address = get_address_by_fd(productor2_subs, aux->fd);
 
-					if(!check_match(disconnected_clients, aux_address)){
+					if(!check_match(disconnected_clients, aux_address)){			//Si esta conectado el cliente
 						if(write(aux->fd, writing_buffer, PACKET_LENGTH) == -1){
 							perror("write() failed.\n");
 							exit(EXIT_FAILURE);
@@ -360,20 +361,20 @@ int main(int argc, char *argv[]){
 						update_time();
 						fprintf(fp, "[%02d:%02d:%02d] '%s' Sent from Productor2 to Client %d\n", c_time->tm_hour, c_time->tm_min, c_time->tm_sec, msgp.mtext, aux_address);
 					}
-					else{
+					else{															//Si no esta conectado el cliente
 						add_msg(&disconnected_clients, aux_address, msgp.mtext);
 					}
 
 					aux = aux->next;
 				}
 			}
-			else if(msgp.mtype == 4){
+			else if(msgp.mtype == 4){												//Si es de productor3
 				aux = productor3_subs;
 
 				while(aux != NULL){
 					aux_address = get_address_by_fd(productor3_subs, aux->fd);
 
-					if(!check_match(disconnected_clients, aux_address)){
+					if(!check_match(disconnected_clients, aux_address)){			//Si esta conectado el cliente
 						if(write(aux->fd, writing_buffer, PACKET_LENGTH) == -1){
 							perror("write() failed.\n");
 							exit(EXIT_FAILURE);
@@ -382,7 +383,7 @@ int main(int argc, char *argv[]){
 						update_time();
 						fprintf(fp, "[%02d:%02d:%02d] '%s' Sent from Productor3 to Client %d\n", c_time->tm_hour, c_time->tm_min, c_time->tm_sec, msgp.mtext, aux_address);
 					}
-					else{
+					else{															//Si no esta conectado el cliente
 						add_msg(&disconnected_clients, aux_address, msgp.mtext);
 					}
 
@@ -418,7 +419,7 @@ void create_log_zip(){
 	char* buffer = NULL;
 	long int size = 0;
 	
-	rewind(fp);
+	rewind(fp);								//Calculo tamaño del archivo
 	fseek(fp, 0, SEEK_END);
 	size = ftell(fp);
 

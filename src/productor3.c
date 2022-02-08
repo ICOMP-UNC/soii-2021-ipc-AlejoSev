@@ -26,7 +26,7 @@ int main(){
     char* token;
 
     msgp.mtype = 4;
-    msg_queue_key = ftok("/home/alejo/soii-2021-ipc-AlejoSev/src/server.c", 1);
+    msg_queue_key = ftok("/home/alejo/soii-2021-ipc-AlejoSev/src/server.c", 1);         //Creo clave
 
     if(msg_queue_key == -1){
         perror("ftok() failed.\n");
@@ -35,7 +35,7 @@ int main(){
 
     printf("Key: %d\n", msg_queue_key);
 
-    if((qid = msgget(msg_queue_key, 0666)) == -1){
+    if((qid = msgget(msg_queue_key, 0666)) == -1){                                      //Obtengo queue
         perror("msgget() failed.\n");
         exit(EXIT_FAILURE);
     }
@@ -57,7 +57,7 @@ int main(){
         sprintf(to_send, "%f", n_cpu_load);
         strcpy(msgp.mtext, to_send);
 
-        if(msgsnd(qid, (void*)&msgp, sizeof(msgp.mtext), IPC_NOWAIT) == -1){
+        if(msgsnd(qid, (void*)&msgp, sizeof(msgp.mtext), IPC_NOWAIT) == -1){            //Envio promedio de carga en el ultimo minuto
             perror("msgsnd() failed.");
             exit(EXIT_FAILURE);
         }

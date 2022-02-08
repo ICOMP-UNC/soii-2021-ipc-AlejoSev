@@ -19,7 +19,7 @@ Para la comunicación entre Productores y Servidor elegí Message Queue de [Syst
 
 En el envío de mensajes entre Clientes - Servidor y CLI - Servidor utilicé la siguiente trama: 
 
-![trama](/img/trama.png)
+![trama](./img/trama.png)
 
 - **Client Type:** H para los clientes (Hosts) y C para la CLI.
 - **Client Address:** Dirección del cliente.

@@ -37,7 +37,7 @@ int main(int argc, char *argv[]){
 	}
 
 	puerto = atoi(argv[2]);
-	sockfd = socket(AF_INET, SOCK_STREAM, 0);
+	sockfd = socket(AF_INET, SOCK_STREAM, 0);                                                           //Creo socket
 
 	server = gethostbyname(argv[1]);
 
@@ -46,7 +46,7 @@ int main(int argc, char *argv[]){
 	bcopy((char*)server->h_addr, (char*)&serv_addr.sin_addr.s_addr, (size_t)server->h_length);
 	serv_addr.sin_port = htons((uint16_t)puerto);
 
-	if(connect(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0){
+	if(connect(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0){                           //Conecto contra el server
 		perror("connect() failed.\n");
 		exit(EXIT_FAILURE);
 	}
@@ -55,8 +55,8 @@ int main(int argc, char *argv[]){
         bzero(reading_buffer, PACKET_LENGTH);
 		bzero(writing_buffer, PACKET_LENGTH);
 
-        if(first_communication){
-            bytes_readed = read(sockfd, &reading_buffer, PACKET_LENGTH);
+        if(first_communication){                            
+            bytes_readed = read(sockfd, &reading_buffer, PACKET_LENGTH);                                //Quedo esperando mensaje
 
             if(bytes_readed == -1){
                 perror("read() failed.\n");
@@ -70,7 +70,7 @@ int main(int argc, char *argv[]){
             token = strtok(NULL, " ");
             token = strtok(NULL, " ");
 
-            if(strncmp(token,"Checksum_Request", 16) == 0){
+            if(strncmp(token,"Checksum_Request", 16) == 0){                                             //Si es checksum_request devuelvo checksum_acknowledge
                 compute_md5(token, digest);
 
                 for (int i = 0, j = 0; i < MD5_DIGEST_LENGTH; i++, j+=2)
@@ -95,11 +95,11 @@ int main(int argc, char *argv[]){
                 }
             }
 
-            first_communication = 0;
+            first_communication = 0;                                                                    //Termina comunicación bidireccional
         }
 
-        while(!ready_to_send){
-            printf("> ");
+        while(!ready_to_send){                                     
+            printf("> ");                                                                               //Espero entrada del usuario
             fgets(user_input, 63, stdin);
             strtok(user_input, "\n");            
 
@@ -117,7 +117,7 @@ int main(int argc, char *argv[]){
                 token = strtok(NULL, " ");
             }
 
-            if((atoi(parsed_input[1]) >= 0)  && (check_productor(parsed_input[2]))){
+            if((atoi(parsed_input[1]) >= 0)  && (check_productor(parsed_input[2]))){                    //Compruebo argumentos correctos
                 if(!strcmp(parsed_input[0], "add")){
                     printf("Adding %s to %s\n", parsed_input[1], parsed_input[2]);
                     ready_to_send = 1;
@@ -142,7 +142,7 @@ int main(int argc, char *argv[]){
 
 		bzero(to_send, PACKET_LENGTH);
 
-        strcat(to_send, "C");
+        strcat(to_send, "C");                                       //Genero mensaje
         strcat(to_send, " ");
         strcat(to_send, parsed_input[0]);
         strcat(to_send, " ");
@@ -152,7 +152,7 @@ int main(int argc, char *argv[]){
             strcat(to_send, parsed_input[2]);         
         }
 
-        if(write(sockfd, &to_send, PACKET_LENGTH) == -1){
+        if(write(sockfd, &to_send, PACKET_LENGTH) == -1){           //Envio mensaje al server
             perror("write() failed.\n");
             exit(EXIT_FAILURE);
         }

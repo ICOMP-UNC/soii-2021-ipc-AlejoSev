@@ -26,7 +26,7 @@ int main(){
     msgp.mtype = 3;
     strcpy(msgp.mtext, "productor2_up");
 
-    msg_queue_key = ftok("/home/alejo/soii-2021-ipc-AlejoSev/src/server.c", 1);
+    msg_queue_key = ftok("/home/alejo/soii-2021-ipc-AlejoSev/src/server.c", 1);     //Creo clave
 
     if(msg_queue_key == -1){
         perror("ftok() failed.\n");
@@ -35,7 +35,7 @@ int main(){
 
     printf("Key: %d\n", msg_queue_key);
 
-    if((qid = msgget(msg_queue_key, 0666)) == -1){
+    if((qid = msgget(msg_queue_key, 0666)) == -1){                                  //Obtengo queue
         perror("msgget() failed.\n");
         exit(EXIT_FAILURE);
     }
@@ -57,8 +57,8 @@ int main(){
             }
         }
 
-        if(msgsnd(qid, (void*)&msgp, sizeof(msgp.mtext), IPC_NOWAIT) == -1){
-            perror("msgsnd() failed.");
+        if(msgsnd(qid, (void*)&msgp, sizeof(msgp.mtext), IPC_NOWAIT) == -1){        //Envio la memoria disponible cada 2 segs
+            perror("msgsnd() failed."); 
             exit(EXIT_FAILURE);
         }
         printf("%s\n", msgp.mtext);
