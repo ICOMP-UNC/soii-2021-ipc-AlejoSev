@@ -6,6 +6,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <unistd.h>
+#include <arpa/inet.h>
 #include "../include/md5.h"
 
 #define PACKET_LENGTH 128
@@ -43,7 +44,9 @@ int main(int argc, char *argv[]){
 
 	memset((char*)&serv_addr, '0', sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;
-	bcopy((char*)server->h_addr, (char*)&serv_addr.sin_addr.s_addr, (size_t)server->h_length);
+	bcopy((char*)server->h_addr,
+          (char*)&serv_addr.sin_addr.s_addr, 
+          (size_t)server->h_length);
 	serv_addr.sin_port = htons((uint16_t)puerto);
 
 	if(connect(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0){                           //Conecto contra el server
@@ -117,12 +120,12 @@ int main(int argc, char *argv[]){
                 token = strtok(NULL, " ");
             }
 
-            if((atoi(parsed_input[1]) >= 0)  && (check_productor(parsed_input[2]))){                    //Compruebo argumentos correctos
-                if(!strcmp(parsed_input[0], "add")){
+            if(atoi(parsed_input[1]) >= 0){                    //Compruebo argumentos correctos
+                if(!strcmp(parsed_input[0], "add") && (check_productor(parsed_input[2]))){
                     printf("Adding %s to %s\n", parsed_input[1], parsed_input[2]);
                     ready_to_send = 1;
                 }
-                else if(!strcmp(parsed_input[0], "delete")){
+                else if(!strcmp(parsed_input[0], "delete") && (check_productor(parsed_input[2]))){
                     printf("Deleting %s from %s\n", parsed_input[1], parsed_input[2]);
                     ready_to_send = 1;
                 }

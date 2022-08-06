@@ -13,6 +13,9 @@
 #include <time.h>
 #include <signal.h>
 #include <zip.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <sys/sendfile.h>
 #include "../include/list_lib.h"
 #include "../include/md5.h"
 
@@ -53,7 +56,7 @@ int main(int argc, char *argv[]){
 	key_t msg_queue_key;
     struct msgbuf msgp;
 
-    msg_queue_key = ftok("/home/alejo/soii-2021-ipc-AlejoSev/src/server.c", 1);			//Generamos clave
+    msg_queue_key = ftok("/home/alejo/sisops/repos/soii-2021-ipc-AlejoSev/src/server.c", 1);			//Generamos clave
 
     if(msg_queue_key == -1){
         perror("ftok() failed.\n");
@@ -289,7 +292,43 @@ int main(int argc, char *argv[]){
 								}
 							}
 							else if(strcmp(cmd, "log") == 0){
+								// client_address = strtok(NULL, " ");
+								ssize_t s;
+
 								create_log_zip();
+
+								struct stat zip_stat;
+
+								int zip_fd = open("log.zip", O_RDONLY);
+								if(zip_fd == -1){
+									perror("Zip fopen() failed.\n");
+									exit(EXIT_FAILURE);
+								}
+
+								if(fstat((zip_fd), &zip_stat) == -1){
+									perror("fstat() failed.\n");
+									exit(EXIT_FAILURE);
+								}
+
+								bzero(writing_buffer, PACKET_LENGTH);
+								sprintf(writing_buffer, "L %ld", zip_stat.st_size);
+
+								if(write(aux_fd, writing_buffer, PACKET_LENGTH) == -1){
+									perror("write() failed.\n");
+									exit(EXIT_FAILURE);
+								}
+
+								bzero(writing_buffer, PACKET_LENGTH);
+
+								printf("File size: %ld bytes.\n", zip_stat.st_size);
+
+								s = sendfile(aux_fd, zip_fd, NULL, (size_t)zip_stat.st_size);
+								if(s<0){
+									perror("senfile() filed.\n");
+									exit(EXIT_FAILURE);
+								}
+								
+								close(zip_fd);
 							}
 						}
 						else{

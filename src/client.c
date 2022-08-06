@@ -12,12 +12,13 @@
 
 int main(int argc, char *argv[]){
 	int sockfd, puerto;
+	long int zip_size;
 	ssize_t bytes_readed;
 	struct sockaddr_in serv_addr;
 	struct hostent *server;
 	char reading_buffer[PACKET_LENGTH];
 	char writing_buffer[PACKET_LENGTH];
-	char* token;
+	char* token, *endptr;
 
 	unsigned char digest[MD5_DIGEST_LENGTH];
 	char hash[(MD5_DIGEST_LENGTH * 2) + 1];
@@ -56,62 +57,93 @@ int main(int argc, char *argv[]){
 		printf("(%s)Message received: '%s'\n", argv[3], reading_buffer);
 
 		token = strtok(reading_buffer, " ");
-		token = strtok(NULL, " ");
-		token = strtok(NULL, " ");
-		token = strtok(NULL, " ");
 
-		if(strncmp(token,"Checksum_Request", 16) == 0){												//Si es checksum_request envio checksum_acknowledge
-			compute_md5(token, digest);
+		if(strncmp(token, "L", 1) == 0){
+			ssize_t read_bytes;
 
-			for (int i = 0, j = 0; i < MD5_DIGEST_LENGTH; i++, j+=2)
-				sprintf(hash+j, "%02x", digest[i]);
+			FILE *zipfile = fopen("client_log.zip", "wb");
+			if (zipfile == NULL){
+				perror("fopen() failed.\n");
+			}
 
-			hash[MD5_DIGEST_LENGTH * 2] = 0;
 			token = strtok(NULL, " ");
+			zip_size = strtol(token, &endptr, 10);
+			printf("Zip size: %ld\n", zip_size);
 
-			if(strncmp(token, hash, MD5_DIGEST_LENGTH*2) == 0){
-				compute_md5("Checksum_Acknowledge", digest);
+			char* zipdata = calloc((size_t)zip_size, 1);
 
-				for (int i = 0, j = 0; i < MD5_DIGEST_LENGTH; i++, j+=2)
-					sprintf(hash+j, "%02x", digest[i]);
+			read_bytes = read(sockfd, zipdata, (size_t)zip_size);
+			if(read_bytes < 0){
+				perror("read() failed.\n");
+			}
 
-				hash[MD5_DIGEST_LENGTH * 2] = 0;
+			printf("Bytes readed: %ld\n", read_bytes);
 
-				sprintf(writing_buffer, "H %s %s Checksum_Acknowledge %s", argv[3], argv[2], hash);
-
-				if(write(sockfd, &writing_buffer, PACKET_LENGTH) == -1){
-					perror("write() failed.\n");
-					exit(EXIT_FAILURE);
-				}
-
-				bzero(writing_buffer, PACKET_LENGTH);
+			fwrite(zipdata, 1, (size_t)zip_size, zipfile);
+				
+			int close = fclose(zipfile);
+			if(close != 0){
+				perror("fclose() failed.\n");
 			}
 		}
-		else{																						//En caso de ser otro mensaje simplemente devuelvo message_acknowledge
-			compute_md5(token, digest);
-
-			for (int i = 0, j = 0; i < MD5_DIGEST_LENGTH; i++, j+=2)
-				sprintf(hash+j, "%02x", digest[i]);
-
-			hash[MD5_DIGEST_LENGTH * 2] = 0;
+		else{
+			token = strtok(NULL, " ");
+			token = strtok(NULL, " ");
 			token = strtok(NULL, " ");
 
-			if(strncmp(token, hash, MD5_DIGEST_LENGTH*2) == 0){
-				compute_md5("Message_Acknowledge", digest);
+			if(strncmp(token,"Checksum_Request", 16) == 0){												//Si es checksum_request envio checksum_acknowledge
+				compute_md5(token, digest);
 
 				for (int i = 0, j = 0; i < MD5_DIGEST_LENGTH; i++, j+=2)
 					sprintf(hash+j, "%02x", digest[i]);
 
 				hash[MD5_DIGEST_LENGTH * 2] = 0;
-				bzero(writing_buffer, PACKET_LENGTH);
-				sprintf(writing_buffer, "H %s %s Message_Acknowledge %s", argv[3], argv[2], hash);
+				token = strtok(NULL, " ");
 
-				if(write(sockfd, &writing_buffer, PACKET_LENGTH) == -1){
-					perror("write() failed.\n");
-					exit(EXIT_FAILURE);
+				if(strncmp(token, hash, MD5_DIGEST_LENGTH*2) == 0){
+					compute_md5("Checksum_Acknowledge", digest);
+
+					for (int i = 0, j = 0; i < MD5_DIGEST_LENGTH; i++, j+=2)
+						sprintf(hash+j, "%02x", digest[i]);
+
+					hash[MD5_DIGEST_LENGTH * 2] = 0;
+
+					sprintf(writing_buffer, "H %s %s Checksum_Acknowledge %s", argv[3], argv[2], hash);
+
+					if(write(sockfd, &writing_buffer, PACKET_LENGTH) == -1){
+						perror("write() failed.\n");
+						exit(EXIT_FAILURE);
+					}
+
+					bzero(writing_buffer, PACKET_LENGTH);
 				}
+			}
+			else{																						//En caso de ser otro mensaje simplemente devuelvo message_acknowledge
+				compute_md5(token, digest);
 
-				bzero(writing_buffer, PACKET_LENGTH);
+				for (int i = 0, j = 0; i < MD5_DIGEST_LENGTH; i++, j+=2)
+					sprintf(hash+j, "%02x", digest[i]);
+
+				hash[MD5_DIGEST_LENGTH * 2] = 0;
+				token = strtok(NULL, " ");
+
+				if(strncmp(token, hash, MD5_DIGEST_LENGTH*2) == 0){
+					compute_md5("Message_Acknowledge", digest);
+
+					for (int i = 0, j = 0; i < MD5_DIGEST_LENGTH; i++, j+=2)
+						sprintf(hash+j, "%02x", digest[i]);
+
+					hash[MD5_DIGEST_LENGTH * 2] = 0;
+					bzero(writing_buffer, PACKET_LENGTH);
+					sprintf(writing_buffer, "H %s %s Message_Acknowledge %s", argv[3], argv[2], hash);
+
+					if(write(sockfd, &writing_buffer, PACKET_LENGTH) == -1){
+						perror("write() failed.\n");
+						exit(EXIT_FAILURE);
+					}
+
+					bzero(writing_buffer, PACKET_LENGTH);
+				}
 			}
 		}
 	}

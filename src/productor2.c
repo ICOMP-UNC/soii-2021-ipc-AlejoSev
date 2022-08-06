@@ -26,7 +26,7 @@ int main(){
     msgp.mtype = 3;
     strcpy(msgp.mtext, "productor2_up");
 
-    msg_queue_key = ftok("/home/alejo/soii-2021-ipc-AlejoSev/src/server.c", 1);     //Creo clave
+    msg_queue_key = ftok("/home/alejo/sisops/repos/soii-2021-ipc-AlejoSev/src/server.c", 1);     //Creo clave
 
     if(msg_queue_key == -1){
         perror("ftok() failed.\n");
